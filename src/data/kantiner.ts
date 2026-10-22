@@ -27,7 +27,7 @@ export const kantiner: Kantine[] = [
     aapner: '08:00',
     stenger: '16:00',
     leveringTilBord: true,
-    bilde: require('../../assets/images/mat/kaffe.jpg'),
+    bilde: require('../../assets/images/mat/kantine-disk.jpg'),
   },
   {
     id: 'p35-kaffebar',
@@ -37,7 +37,7 @@ export const kantiner: Kantine[] = [
     aapner: '08:00',
     stenger: '18:00',
     leveringTilBord: false,
-    bilde: require('../../assets/images/mat/latte.jpg'),
+    bilde: require('../../assets/images/mat/kantine-lokale.jpg'),
   },
   {
     id: 'p46-kafe',
@@ -47,6 +47,7 @@ export const kantiner: Kantine[] = [
     aapner: '08:30',
     stenger: '15:30',
     leveringTilBord: true,
+    bilde: require('../../assets/images/mat/kantine-lokale.jpg'),
   },
   {
     id: 'p52-kantine',
@@ -56,6 +57,7 @@ export const kantiner: Kantine[] = [
     aapner: '10:00',
     stenger: '14:30',
     leveringTilBord: true,
+    bilde: require('../../assets/images/mat/kantine-disk.jpg'),
   },
   {
     id: 'kjeller-kantine',
@@ -65,6 +67,7 @@ export const kantiner: Kantine[] = [
     aapner: '08:00',
     stenger: '15:00',
     leveringTilBord: false,
+    bilde: require('../../assets/images/mat/kantine-lokale.jpg'),
   },
 ];
 
