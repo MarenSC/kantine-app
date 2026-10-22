@@ -1,17 +1,38 @@
-import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { hentVare } from '../data/varer';
-import type { Bestilling, Handlekurvlinje, Leveringsmaate, Vare } from '../types';
-import { beregnPris, type Prisinfo } from '../utils/pris';
+import type {
+  Bestilling,
+  Bestillingssteg,
+  Handlekurvlinje,
+  Leveringsmaate,
+  Tilbakemelding,
+  Vare,
+} from '../types';
+import { beregnPris, erUtgaatt, type Prisinfo } from '../utils/pris';
 
 /**
  * Holder styr på handlekurven og bestillingene i hele appen.
  *
- * Handlekurven kan bare inneholde varer fra ÉN kantine om gangen,
- * siden studenten henter/får levert fra ett sted.
- *
- * Merk: Data lagres foreløpig bare i minnet, og forsvinner når appen lukkes.
+ * - Handlekurven kan bare inneholde varer fra ÉN kantine om gangen.
+ * - Bestillingene lagres på enheten (AsyncStorage), så de huskes neste gang.
+ * - Kantinevisningen bruker de samme bestillingene og kan endre status.
  */
+
+const LAGRINGSNOKKEL = 'kantina:bestillinger:v1';
+
+/** Antall stempler som trengs for en gratis kaffe */
+export const STEMPLER_FOR_GRATIS = 10;
 
 // ---------- State og actions ----------
 
@@ -25,7 +46,10 @@ type Action =
   | { type: 'LEGG_TIL'; vare: Vare }
   | { type: 'SETT_ANTALL'; vareId: string; antall: number }
   | { type: 'TOM_KURV' }
-  | { type: 'LEGG_INN_BESTILLING'; bestilling: Bestilling };
+  | { type: 'ERSTATT_KURV'; kantineId: string; linjer: Handlekurvlinje[] }
+  | { type: 'LEGG_INN_BESTILLING'; bestilling: Bestilling }
+  | { type: 'LAST_INN'; bestillinger: Bestilling[] }
+  | { type: 'OPPDATER_BESTILLING'; id: string; endring: Partial<Bestilling> };
 
 const startState: State = {
   kurvKantineId: null,
@@ -66,12 +90,24 @@ function reducer(state: State, action: Action): State {
     case 'TOM_KURV':
       return { ...state, kurv: [], kurvKantineId: null };
 
+    case 'ERSTATT_KURV':
+      return { ...state, kurvKantineId: action.kantineId, kurv: action.linjer };
+
     case 'LEGG_INN_BESTILLING':
       return {
         ...state,
         kurv: [],
         kurvKantineId: null,
         bestillinger: [action.bestilling, ...state.bestillinger],
+      };
+
+    case 'LAST_INN':
+      return { ...state, bestillinger: action.bestillinger };
+
+    case 'OPPDATER_BESTILLING':
+      return {
+        ...state,
+        bestillinger: state.bestillinger.map((b) => (b.id === action.id ? { ...b, ...action.endring } : b)),
       };
 
     default:
@@ -89,6 +125,19 @@ function lagHentekode(): string {
   return String(Math.floor(100 + Math.random() * 900)); // tresifret kode, 100–999
 }
 
+/** Gjør eldre lagrede bestillinger kompatible med dagens datamodell. */
+function oppgrader(b: Bestilling): Bestilling {
+  return {
+    ...b,
+    linjer: b.linjer.map((l) => ({
+      ...l,
+      ordinaerPris: l.ordinaerPris ?? l.stykkpris,
+      reddet: l.reddet ?? false,
+      stempel: l.stempel ?? false,
+    })),
+  };
+}
+
 // ---------- Context ----------
 
 export interface KurvVare {
@@ -98,14 +147,24 @@ export interface KurvVare {
   linjesum: number;
 }
 
+export interface Statistikk {
+  /** Antall varer med datorabatt studenten har kjøpt */
+  reddedeVarer: number;
+  /** Kroner spart på tilbud og datorabatt totalt */
+  spartTotalt: number;
+  /** Stempler samlet totalt (kaffe) */
+  stempler: number;
+}
+
 interface BestillingContextVerdi {
   kurvKantineId: string | null;
   kurvVarer: KurvVare[];
   antallIKurv: number;
   totalpris: number;
-  /** Hvor mye studenten sparer på tilbud og datorabatt */
+  /** Hvor mye studenten sparer på tilbud og datorabatt i kurven */
   spart: number;
   bestillinger: Bestilling[];
+  statistikk: Statistikk;
   antallAvVare: (vareId: string) => number;
   leggTil: (vare: Vare) => void;
   settAntall: (vareId: string, antall: number) => void;
@@ -113,12 +172,37 @@ interface BestillingContextVerdi {
   /** Sender bestillingen og returnerer id-en til den nye bestillingen */
   sendBestilling: (leveringsmaate: Leveringsmaate, kommentar?: string) => string | null;
   hentBestilling: (id: string) => Bestilling | undefined;
+  /** Legger varene fra en tidligere bestilling i kurven. Returnerer hvor mange varer som fortsatt fantes. */
+  bestillIgjen: (bestilling: Bestilling) => number;
+  settStatus: (id: string, status: Bestillingssteg) => void;
+  giTilbakemelding: (id: string, tilbakemelding: Tilbakemelding) => void;
 }
 
 const BestillingContext = createContext<BestillingContextVerdi | null>(null);
 
 export function BestillingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, startState);
+  const [lastet, setLastet] = useState(false);
+
+  // Les inn lagrede bestillinger ved oppstart.
+  useEffect(() => {
+    AsyncStorage.getItem(LAGRINGSNOKKEL)
+      .then((tekst) => {
+        if (!tekst) return;
+        const lagret = JSON.parse(tekst) as Bestilling[];
+        if (Array.isArray(lagret)) dispatch({ type: 'LAST_INN', bestillinger: lagret.map(oppgrader) });
+      })
+      .catch((feil) => console.warn('Kunne ikke lese bestillinger', feil))
+      .finally(() => setLastet(true));
+  }, []);
+
+  // Lagre hver gang bestillingene endres (men ikke før vi har lest inn de gamle).
+  useEffect(() => {
+    if (!lastet) return;
+    AsyncStorage.setItem(LAGRINGSNOKKEL, JSON.stringify(state.bestillinger)).catch((feil) =>
+      console.warn('Kunne ikke lagre bestillinger', feil),
+    );
+  }, [state.bestillinger, lastet]);
 
   const kurvVarer = useMemo<KurvVare[]>(
     () =>
@@ -137,6 +221,15 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     (sum, k) => sum + (k.prisinfo.ordinaerPris - k.prisinfo.pris) * k.antall,
     0,
   );
+
+  const statistikk = useMemo<Statistikk>(() => {
+    const linjer = state.bestillinger.flatMap((b) => b.linjer);
+    return {
+      reddedeVarer: linjer.filter((l) => l.reddet).reduce((sum, l) => sum + l.antall, 0),
+      spartTotalt: linjer.reduce((sum, l) => sum + (l.ordinaerPris - l.stykkpris) * l.antall, 0),
+      stempler: linjer.filter((l) => l.stempel).reduce((sum, l) => sum + l.antall, 0),
+    };
+  }, [state.bestillinger]);
 
   const antallAvVare = useCallback(
     (vareId: string) => state.kurv.find((l) => l.vareId === vareId)?.antall ?? 0,
@@ -164,6 +257,9 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
           navn: k.vare.navn,
           antall: k.antall,
           stykkpris: k.prisinfo.pris,
+          ordinaerPris: k.prisinfo.ordinaerPris,
+          reddet: k.prisinfo.grunn === 'dato',
+          stempel: k.vare.stempelkort === true,
         })),
         totalpris,
         leveringsmaate,
@@ -183,6 +279,27 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     [state.bestillinger],
   );
 
+  const bestillIgjen = useCallback((bestilling: Bestilling) => {
+    const linjer: Handlekurvlinje[] = bestilling.linjer.flatMap((l) => {
+      const vare = hentVare(l.vareId);
+      if (!vare || erUtgaatt(vare) || vare.antallIgjen === 0) return [];
+      return [{ vareId: vare.id, antall: Math.min(l.antall, vare.antallIgjen) }];
+    });
+    if (linjer.length > 0) dispatch({ type: 'ERSTATT_KURV', kantineId: bestilling.kantineId, linjer });
+    return linjer.length;
+  }, []);
+
+  const settStatus = useCallback(
+    (id: string, status: Bestillingssteg) => dispatch({ type: 'OPPDATER_BESTILLING', id, endring: { status } }),
+    [],
+  );
+
+  const giTilbakemelding = useCallback(
+    (id: string, tilbakemelding: Tilbakemelding) =>
+      dispatch({ type: 'OPPDATER_BESTILLING', id, endring: { tilbakemelding } }),
+    [],
+  );
+
   const verdi: BestillingContextVerdi = {
     kurvKantineId: state.kurvKantineId,
     kurvVarer,
@@ -190,12 +307,16 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     totalpris,
     spart,
     bestillinger: state.bestillinger,
+    statistikk,
     antallAvVare,
     leggTil,
     settAntall,
     tomKurv,
     sendBestilling,
     hentBestilling,
+    bestillIgjen,
+    settStatus,
+    giTilbakemelding,
   };
 
   return <BestillingContext.Provider value={verdi}>{children}</BestillingContext.Provider>;

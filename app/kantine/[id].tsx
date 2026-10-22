@@ -1,13 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Merkelapp } from '../../src/components/Merkelapp';
 import { ProduktKort } from '../../src/components/ProduktKort';
 import { SioMerke } from '../../src/components/SioMerke';
 import { TomTilstand } from '../../src/components/TomTilstand';
+import { Travelhet } from '../../src/components/Travelhet';
 import { Valgbrikke } from '../../src/components/Valgbrikke';
 import { VareBilde } from '../../src/components/VareBilde';
 import { VareKort } from '../../src/components/VareKort';
@@ -17,7 +18,8 @@ import { hentBygg, hentKantine } from '../../src/data/kantiner';
 import { varerIKantine } from '../../src/data/varer';
 import { avstand, farger, fonter, radius, skrift } from '../../src/theme';
 import type { Kategori, Vare } from '../../src/types';
-import { erAapen } from '../../src/utils/dato';
+import { datoOmDager, erAapen, nesteHverdager, tilIsoDato, ukedag } from '../../src/utils/dato';
+import { bekreft } from '../../src/utils/dialog';
 import { harKostholdsvalg, kostholdsadvarsel } from '../../src/utils/kosthold';
 import { beregnPris, erUtgaatt, formaterPris, type Prisinfo } from '../../src/utils/pris';
 
@@ -55,18 +57,27 @@ export default function KantineSkjerm() {
   const { kurvKantineId, antallIKurv, totalpris, antallAvVare, leggTil } = useBestilling();
   const { preferanser, settFavoritt } = useBruker();
   const [filter, setFilter] = useState<Filter>('alle');
+  const [sok, setSok] = useState('');
 
-  // Regn ut pris og kostholdsadvarsel én gang per vare, og skjul utgåtte varer.
+  // Ukemeny: de neste fem hverdagene. Første dag er i dag (eller mandag i helgen).
+  const dager = useMemo(() => nesteHverdager(5), []);
+  const [valgtDagIso, setValgtDagIso] = useState(() => tilIsoDato(dager[0]));
+  const valgtDag = dager.find((d) => tilIsoDato(d) === valgtDagIso) ?? dager[0];
+  const erIDag = valgtDagIso === datoOmDager(0);
+
+  // Regn ut pris og kostholdsadvarsel én gang per vare, og skjul utgåtte varer
+  // og varer som ikke serveres den valgte dagen.
   const alleVarer = useMemo<VareMedPris[]>(
     () =>
       varerIKantine(id)
-        .filter((vare) => !erUtgaatt(vare))
+        .filter((vare) => !erUtgaatt(vare, valgtDag))
+        .filter((vare) => !vare.dager || vare.dager.includes(ukedag(valgtDag)))
         .map((vare) => ({
           vare,
-          prisinfo: beregnPris(vare),
+          prisinfo: beregnPris(vare, valgtDag),
           advarsel: kostholdsadvarsel(vare, preferanser),
         })),
-    [id, preferanser],
+    [id, preferanser, valgtDag],
   );
 
   const antallTilbud = alleVarer.filter((v) => v.prisinfo.grunn !== null).length;
@@ -75,7 +86,9 @@ export default function KantineSkjerm() {
   const erFavoritt = preferanser.favorittKantineId === id;
 
   const seksjoner = useMemo(() => {
+    const sokeord = sok.trim().toLowerCase();
     const filtrert = alleVarer.filter((v) => {
+      if (sokeord && !`${v.vare.navn} ${v.vare.beskrivelse}`.toLowerCase().includes(sokeord)) return false;
       if (filter === 'alle') return true;
       if (filter === 'passer') return v.advarsel === null;
       if (filter === 'tilbud') return v.prisinfo.grunn !== null;
@@ -95,7 +108,7 @@ export default function KantineSkjerm() {
         return { tittel: g.tittel, data };
       })
       .filter((s) => s.data.length > 0);
-  }, [alleVarer, filter]);
+  }, [alleVarer, filter, sok]);
 
   const kurvErHer = kurvKantineId === id && antallIKurv > 0;
 
@@ -107,13 +120,11 @@ export default function KantineSkjerm() {
         return;
       }
       const navn = hentKantine(kurvKantineId)?.navn ?? 'en annen kantine';
-      Alert.alert(
+      bekreft(
         'Starte ny handlekurv?',
         `Du har varer fra ${navn} i handlekurven. Du kan bare bestille fra én kantine om gangen.`,
-        [
-          { text: 'Avbryt', style: 'cancel' },
-          { text: 'Tøm og legg til', style: 'destructive', onPress: () => leggTil(vare) },
-        ],
+        'Tøm og legg til',
+        () => leggTil(vare),
       );
     },
     [kurvKantineId, leggTil],
@@ -132,6 +143,7 @@ export default function KantineSkjerm() {
     advarsel: v.advarsel,
     antallIKurv: kurvKantineId === id ? antallAvVare(v.vare.id) : 0,
     onLeggTil: haandterLeggTil,
+    kanBestilles: erIDag,
   });
 
   return (
@@ -181,6 +193,59 @@ export default function KantineSkjerm() {
               </View>
               <SioMerke />
 
+              {erIDag ? (
+                <View style={styles.travelhet}>
+                  <Travelhet kantine={kantine} />
+                </View>
+              ) : null}
+
+              <View style={styles.sok}>
+                <Ionicons name="search" size={18} color={farger.tekstDempet} />
+                <TextInput
+                  value={sok}
+                  onChangeText={setSok}
+                  placeholder="Søk i menyen"
+                  placeholderTextColor={farger.tekstDempet}
+                  style={styles.sokFelt}
+                  returnKeyType="search"
+                  accessibilityLabel="Søk i menyen"
+                />
+                {sok ? (
+                  <Pressable onPress={() => setSok('')} accessibilityRole="button" accessibilityLabel="Tøm søket" hitSlop={10}>
+                    <Ionicons name="close-circle" size={18} color={farger.tekstDempet} />
+                  </Pressable>
+                ) : null}
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filtre}
+                style={styles.filterRad}
+              >
+                {dager.map((d) => {
+                  const iso = tilIsoDato(d);
+                  const navn =
+                    iso === datoOmDager(0)
+                      ? 'I dag'
+                      : iso === datoOmDager(1)
+                        ? 'I morgen'
+                        : `${['', 'Man', 'Tir', 'Ons', 'Tor', 'Fre'][ukedag(d)]} ${d.getDate()}.`;
+                  return (
+                    <Valgbrikke key={iso} tekst={navn} valgt={iso === valgtDagIso} onPress={() => setValgtDagIso(iso)} />
+                  );
+                })}
+              </ScrollView>
+
+              {!erIDag ? (
+                <View style={styles.forhandsvisning}>
+                  <Ionicons name="calendar-outline" size={18} color={farger.dato} />
+                  <Text style={styles.forhandsvisningTekst}>
+                    Forhåndsvisning av menyen. Mat kan bestilles samme dag.
+                  </Text>
+                </View>
+              ) : null}
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -221,7 +286,12 @@ export default function KantineSkjerm() {
           )
         }
         ItemSeparatorComponent={() => <View style={{ height: avstand.m }} />}
-        ListEmptyComponent={<TomTilstand ikon="restaurant-outline" tittel="Ingen varer her akkurat nå" />}
+        ListEmptyComponent={
+          <TomTilstand
+            ikon={sok ? 'search-outline' : 'restaurant-outline'}
+            tittel={sok ? `Ingen treff på «${sok}»` : 'Ingen varer her akkurat nå'}
+          />
+        }
       />
 
       {kurvErHer && (
@@ -274,6 +344,42 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     backgroundColor: farger.bakgrunn,
+  },
+  travelhet: {
+    marginTop: avstand.s,
+  },
+  sok: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.s,
+    marginTop: avstand.s,
+    paddingHorizontal: avstand.m,
+    minHeight: 46,
+    borderRadius: radius.rund,
+    backgroundColor: farger.kort,
+    borderWidth: 1,
+    borderColor: farger.kant,
+  },
+  sokFelt: {
+    flex: 1,
+    fontFamily: fonter.vanlig,
+    fontSize: 15,
+    color: farger.tekst,
+    paddingVertical: avstand.s,
+  },
+  forhandsvisning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.s,
+    padding: avstand.m,
+    borderRadius: radius.m,
+    backgroundColor: farger.datoLys,
+  },
+  forhandsvisningTekst: {
+    flex: 1,
+    fontFamily: fonter.medium,
+    fontSize: 14,
+    color: farger.dato,
   },
   infoRad: {
     flexDirection: 'row',
@@ -342,7 +448,7 @@ const styles = StyleSheet.create({
   },
   kurvTekst: {
     flex: 1,
-    color: farger.bakgrunn,
+    color: farger.paaMork,
     fontFamily: fonter.fet,
     fontSize: 16,
   },

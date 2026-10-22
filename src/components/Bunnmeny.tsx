@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   tekst: {
     fontFamily: fonter.medium,
     fontSize: 14,
-    color: farger.bakgrunn,
+    color: farger.paaMork,
   },
   tekstAktiv: {
     fontFamily: fonter.fet,

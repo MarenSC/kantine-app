@@ -87,6 +87,7 @@ export const varer: Vare[] = [
     vegetar: true,
     allergener: [],
     antallIgjen: 200,
+    stempelkort: true,
     bilde: require('../../assets/images/mat/kaffe.jpg'),
   },
   {
@@ -138,6 +139,69 @@ export const varer: Vare[] = [
     bilde: require('../../assets/images/mat/notteblanding.jpg'),
   },
 
+  // Dagens varmrett – én per ukedag (1 = mandag)
+  {
+    id: 'p35-dagens-1',
+    kantineId: 'p35-kantine',
+    navn: 'Dagens: Kyllinggryte',
+    beskrivelse: 'Med ris og salat',
+    kategori: 'varmmat',
+    pris: 89,
+    tilbud: { tekst: 'Studentpris', pris: 75 },
+    allergener: ['melk'],
+    antallIgjen: 30,
+    dager: [1],
+  },
+  {
+    id: 'p35-dagens-2',
+    kantineId: 'p35-kantine',
+    navn: 'Dagens: Tacotallerken',
+    beskrivelse: 'Kjøttdeig eller bønner, tortilla og tilbehør',
+    kategori: 'varmmat',
+    pris: 89,
+    tilbud: { tekst: 'Studentpris', pris: 75 },
+    allergener: ['gluten', 'melk'],
+    antallIgjen: 30,
+    dager: [2],
+  },
+  {
+    id: 'p35-dagens-3',
+    kantineId: 'p35-kantine',
+    navn: 'Dagens: Grønnsakslasagne',
+    beskrivelse: 'Med spinat og ricotta',
+    kategori: 'varmmat',
+    pris: 89,
+    tilbud: { tekst: 'Studentpris', pris: 75 },
+    allergener: ['gluten', 'melk', 'egg'],
+    vegetar: true,
+    antallIgjen: 30,
+    dager: [3],
+  },
+  {
+    id: 'p35-dagens-4',
+    kantineId: 'p35-kantine',
+    navn: 'Dagens: Laks med potet',
+    beskrivelse: 'Ovnsbakt laks, poteter og grønnsaker',
+    kategori: 'varmmat',
+    pris: 89,
+    tilbud: { tekst: 'Studentpris', pris: 75 },
+    allergener: ['fisk', 'melk'],
+    antallIgjen: 30,
+    dager: [4],
+  },
+  {
+    id: 'p35-dagens-5',
+    kantineId: 'p35-kantine',
+    navn: 'Dagens: Pizzafredag',
+    beskrivelse: 'Margherita eller pepperoni',
+    kategori: 'varmmat',
+    pris: 89,
+    tilbud: { tekst: 'Studentpris', pris: 75 },
+    allergener: ['gluten', 'melk'],
+    antallIgjen: 30,
+    dager: [5],
+  },
+
   // ---------- Kaffebaren P35 ----------
   {
     id: 'kb-kaffe',
@@ -148,6 +212,7 @@ export const varer: Vare[] = [
     pris: 25,
     allergener: [],
     antallIgjen: 200,
+    stempelkort: true,
     bilde: require('../../assets/images/mat/kaffe.jpg'),
   },
   {
@@ -160,6 +225,7 @@ export const varer: Vare[] = [
     tilbud: { tekst: 'Studentpris', pris: 35 },
     allergener: ['melk'],
     antallIgjen: 200,
+    stempelkort: true,
     bilde: require('../../assets/images/mat/latte.jpg'),
   },
   {
@@ -309,6 +375,7 @@ export const varer: Vare[] = [
     pris: 22,
     allergener: [],
     antallIgjen: 200,
+    stempelkort: true,
   },
 ];
 

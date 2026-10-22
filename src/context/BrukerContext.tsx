@@ -23,6 +23,7 @@ const standardPreferanser: Preferanser = {
   allergener: [],
   vegetar: false,
   favorittKantineId: null,
+  varselReddMaten: true,
 };
 
 /** Testbruker som brukes til ekte Feide-innlogging er satt opp. */
@@ -49,6 +50,7 @@ interface BrukerContextVerdi {
   settVegetar: (vegetar: boolean) => void;
   vekslAllergen: (allergen: string) => void;
   settFavoritt: (kantineId: string | null) => void;
+  settVarselReddMaten: (paa: boolean) => void;
 }
 
 const BrukerContext = createContext<BrukerContextVerdi | null>(null);
@@ -107,6 +109,10 @@ export function BrukerProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, preferanser: { ...d.preferanser, favorittKantineId } }));
   }, []);
 
+  const settVarselReddMaten = useCallback((varselReddMaten: boolean) => {
+    setData((d) => ({ ...d, preferanser: { ...d.preferanser, varselReddMaten } }));
+  }, []);
+
   const verdi = useMemo<BrukerContextVerdi>(
     () => ({
       student: data.student,
@@ -117,8 +123,9 @@ export function BrukerProvider({ children }: { children: ReactNode }) {
       settVegetar,
       vekslAllergen,
       settFavoritt,
+      settVarselReddMaten,
     }),
-    [data, lastet, loggInn, loggUt, settVegetar, vekslAllergen, settFavoritt],
+    [data, lastet, loggInn, loggUt, settVegetar, vekslAllergen, settFavoritt, settVarselReddMaten],
   );
 
   return <BrukerContext.Provider value={verdi}>{children}</BrukerContext.Provider>;

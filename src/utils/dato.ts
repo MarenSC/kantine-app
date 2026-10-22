@@ -65,3 +65,29 @@ export function klokkeslett(dato: Date): string {
 export function leggTilMinutter(dato: Date, minutter: number): Date {
   return new Date(dato.getTime() + minutter * 60 * 1000);
 }
+
+const UKEDAGER = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
+
+/** Ukedag som tall: 1 = mandag … 7 = søndag. */
+export function ukedag(dato: Date): number {
+  return dato.getDay() === 0 ? 7 : dato.getDay();
+}
+
+/** "mandag", "tirsdag", … */
+export function ukedagsnavn(dato: Date): string {
+  return UKEDAGER[dato.getDay()];
+}
+
+/**
+ * De neste fem hverdagene (mandag–fredag), fra og med i dag.
+ * Brukes i dagvelgeren for ukemenyen.
+ */
+export function nesteHverdager(antall = 5, fra: Date = iDag()): Date[] {
+  const dager: Date[] = [];
+  const dato = new Date(fra);
+  while (dager.length < antall) {
+    if (ukedag(dato) <= 5) dager.push(new Date(dato));
+    dato.setDate(dato.getDate() + 1);
+  }
+  return dager;
+}

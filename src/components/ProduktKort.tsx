@@ -9,7 +9,7 @@ import { VareBilde } from './VareBilde';
 import { lagerstatus, type VareKortProps } from './VareKort';
 
 /** Kompakt kort for drikke og snacks, vist to og to i et rutenett. */
-function ProduktKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel }: VareKortProps) {
+function ProduktKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, kanBestilles = true }: VareKortProps) {
   const { utsolgt, kanLeggeTil } = lagerstatus(vare, antallIKurv);
 
   return (
@@ -27,7 +27,7 @@ function ProduktKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel
         <LeggTilKnapp
           navn={vare.navn}
           antallIKurv={antallIKurv}
-          aktiv={kanLeggeTil}
+          aktiv={kanLeggeTil && kanBestilles}
           onPress={() => onLeggTil(vare)}
         />
       </View>

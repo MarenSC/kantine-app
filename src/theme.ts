@@ -1,3 +1,5 @@
+import { Appearance } from 'react-native';
+
 /**
  * Designsystemet "Terrakotta": farger, skrifter, avstander og runding.
  * Endre her, så endres utseendet i hele appen.
@@ -9,7 +11,8 @@
  *  - Salviegrønt og rav bare for status (åpent/klar, allergier).
  */
 
-export const farger = {
+/** Lyst tema (standard) */
+const lys = {
   primaer: '#B9473A',
   primaerLys: '#F5E2D8',
   primaerMork: '#8F3B2B',
@@ -19,6 +22,8 @@ export const farger = {
   kort: '#FFFFFF',
   kant: '#E6DCCF',
   morkFlate: '#33281F',
+  /** Tekst som står på morkFlate */
+  paaMork: '#FBF6F0',
   hvit: '#FFFFFF',
   /** Stengt, feil */
   tilbud: '#8F3B2B',
@@ -30,7 +35,39 @@ export const farger = {
   suksess: '#3D5A35',
   suksessLys: '#DDE6D5',
   deaktivert: '#CFC5B8',
-} as const;
+};
+
+type Palett = Record<keyof typeof lys, string>;
+
+/** Mørkt tema – brukes når telefonen/nettleseren står i mørk modus */
+const mork: Palett = {
+  primaer: '#B9473A',
+  primaerLys: '#4A2B24',
+  primaerMork: '#F4B4A6',
+  tekst: '#F3ECE4',
+  tekstDempet: '#B5A797',
+  bakgrunn: '#1C1714',
+  kort: '#28211C',
+  kant: '#3F352E',
+  morkFlate: '#463A31',
+  paaMork: '#F3ECE4',
+  hvit: '#FFFFFF',
+  tilbud: '#F4B4A6',
+  tilbudLys: '#4A2B24',
+  dato: '#F2C46B',
+  datoLys: '#3D2F17',
+  suksess: '#B5D1A8',
+  suksessLys: '#263322',
+  deaktivert: '#5A4E45',
+};
+
+/**
+ * Mørk modus følger systeminnstillingen når appen starter.
+ * (Bytter man modus mens appen er åpen, gjelder det fra neste oppstart.)
+ */
+export const erMorkModus = Appearance.getColorScheme() === 'dark';
+
+export const farger: Palett = erMorkModus ? mork : lys;
 
 /** Navnene må stemme med det som lastes i app/_layout.tsx */
 export const fonter = {

@@ -35,6 +35,18 @@ export default function StartSkjerm() {
   const valgtBygg = byggListe.find((b) => b.id === valgtByggId) ?? byggListe[0];
 
   // Største datorabatt akkurat nå, gjerne fra favorittkantina og helst med bilde.
+  // Varsel: antall «Redd maten»-varer i favorittkantina i dag
+  const reddIFavoritt = useMemo(
+    () =>
+      favoritt
+        ? varer.filter(
+            (v) => v.kantineId === favoritt.id && !erUtgaatt(v) && v.antallIgjen > 0 && beregnPris(v).grunn === 'dato',
+          ).length
+        : 0,
+    [favoritt],
+  );
+  const visVarsel = preferanser.varselReddMaten && favoritt !== undefined && reddIFavoritt > 0;
+
   const reddMaten = useMemo(() => {
     const kandidater = varer
       .filter((v) => !erUtgaatt(v) && v.antallIgjen > 0)
@@ -63,6 +75,20 @@ export default function StartSkjerm() {
           <Text style={skrift.liten}>{fornavn ? `Hei, ${fornavn}` : 'Hei!'}</Text>
           <Text style={skrift.stor}>Hva frister i dag?</Text>
         </View>
+
+        {visVarsel && favoritt && (
+          <Pressable
+            onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: favoritt.id } })}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.varsel, pressed && { opacity: 0.85 }]}
+          >
+            <Ionicons name="notifications" size={20} color={farger.primaerMork} />
+            <Text style={styles.varselTekst}>
+              {favoritt.navn} har {reddIFavoritt} {reddIFavoritt === 1 ? 'vare' : 'varer'} på «Redd maten» i dag
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={farger.primaerMork} />
+          </Pressable>
+        )}
 
         {reddMaten && (
           <View style={styles.reddKort}>
@@ -215,6 +241,21 @@ const styles = StyleSheet.create({
   hilsen: {
     gap: 2,
     marginTop: -avstand.s,
+  },
+  varsel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.s + 2,
+    padding: avstand.m + 2,
+    borderRadius: radius.l,
+    backgroundColor: farger.primaerLys,
+    marginTop: -avstand.s,
+  },
+  varselTekst: {
+    flex: 1,
+    fontFamily: fonter.medium,
+    fontSize: 14,
+    color: farger.primaerMork,
   },
   reddKort: {
     backgroundColor: farger.kort,

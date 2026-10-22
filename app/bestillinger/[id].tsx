@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Knapp } from '../../src/components/Knapp';
 import { Merkelapp } from '../../src/components/Merkelapp';
+import { TilbakemeldingSkjema } from '../../src/components/TilbakemeldingSkjema';
 import { TomTilstand } from '../../src/components/TomTilstand';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
@@ -12,12 +13,13 @@ import { avstand, farger, fonter, radius, skrift, skygge } from '../../src/theme
 import { klokkeslett } from '../../src/utils/dato';
 import { formaterPris } from '../../src/utils/pris';
 import { hentStatus } from '../../src/utils/status';
+import { bekreft, visMelding } from '../../src/utils/dialog';
 import { gaaHjem } from '../../src/utils/navigasjon';
 
 /** Kvittering og status for én bestilling. */
 export default function BestillingSkjerm() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { hentBestilling } = useBestilling();
+  const { hentBestilling, bestillIgjen, giTilbakemelding, kurvKantineId, antallIKurv } = useBestilling();
   const naa = useNaa();
   const bestilling = hentBestilling(id);
 
@@ -31,11 +33,29 @@ export default function BestillingSkjerm() {
   const { leveringsmaate } = bestilling;
   const erHenting = leveringsmaate.type === 'henting';
 
+  function haandterBestillIgjen() {
+    if (!bestilling) return;
+    const utfor = () => {
+      const antall = bestillIgjen(bestilling);
+      if (antall === 0) {
+        visMelding('Ikke tilgjengelig', 'Ingen av varene fra denne bestillingen finnes på menyen nå.');
+        return;
+      }
+      router.push('/handlekurv');
+    };
+    // Advar hvis handlekurven allerede har andre varer
+    if (antallIKurv > 0 && kurvKantineId !== null) {
+      bekreft('Erstatte handlekurven?', 'Varene du har i handlekurven nå, blir byttet ut.', 'Bestill igjen', utfor);
+    } else {
+      utfor();
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.innhold}>
       <View style={styles.hode}>
         <View style={styles.hake}>
-          <Ionicons name="checkmark" size={36} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={36} color={farger.hvit} />
         </View>
         <Text style={skrift.tittel}>
           {erHenting ? 'Maten er reservert!' : 'Bestillingen er sendt!'}
@@ -78,11 +98,17 @@ export default function BestillingSkjerm() {
         </View>
       </View>
 
-      <Knapp
-        tittel="Tilbake til kantinene"
-        variant="sekundaer"
-        onPress={() => gaaHjem()}
-      />
+      {status.ferdig ? (
+        <View style={styles.kort}>
+          <TilbakemeldingSkjema
+            gitt={bestilling.tilbakemelding}
+            onSend={(t) => giTilbakemelding(bestilling.id, t)}
+          />
+        </View>
+      ) : null}
+
+      <Knapp tittel="Bestill det samme igjen" onPress={haandterBestillIgjen} />
+      <Knapp tittel="Tilbake til kantinene" variant="sekundaer" onPress={() => gaaHjem()} />
     </ScrollView>
   );
 }

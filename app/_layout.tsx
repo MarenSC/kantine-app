@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import { ProfilKnapp } from '../src/components/ProfilKnapp';
 import { BestillingProvider } from '../src/context/BestillingContext';
 import { BrukerProvider } from '../src/context/BrukerContext';
-import { farger, fonter } from '../src/theme';
+import { erMorkModus, farger, fonter } from '../src/theme';
 
 // Vis splash-skjermen til skriftene er lastet, så teksten ikke "hopper".
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -38,7 +38,7 @@ export default function RootLayout() {
   return (
     <BrukerProvider>
       <BestillingProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={erMorkModus ? 'light' : 'dark'} />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: farger.bakgrunn },
@@ -57,6 +57,7 @@ export default function RootLayout() {
           <Stack.Screen name="bestillinger/index" options={{ title: 'Mine bestillinger' }} />
           <Stack.Screen name="bestillinger/[id]" options={{ title: 'Bestilling' }} />
           <Stack.Screen name="min-side" options={{ title: 'Min side', headerRight: () => null }} />
+          <Stack.Screen name="kantinevisning" options={{ title: 'Kantinevisning', headerRight: () => null }} />
         </Stack>
       </BestillingProvider>
     </BrukerProvider>

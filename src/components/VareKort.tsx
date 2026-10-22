@@ -16,6 +16,8 @@ export interface VareKortProps {
   onLeggTil: (vare: Vare) => void;
   /** Vises hvis varen ikke passer studentens kosthold, f.eks. "Inneholder gluten" */
   advarsel?: string | null;
+  /** false når man ser på menyen for en annen dag enn i dag */
+  kanBestilles?: boolean;
 }
 
 /** Info om utsolgt/få igjen, brukt av både VareKort og ProduktKort. */
@@ -29,7 +31,7 @@ export function lagerstatus(vare: Vare, antallIKurv: number) {
 }
 
 /** Én rett på menyen: bilde til venstre, tekst i midten, "+" til høyre. */
-function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel }: VareKortProps) {
+function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, kanBestilles = true }: VareKortProps) {
   const { utsolgt, kanLeggeTil, faaIgjen } = lagerstatus(vare, antallIKurv);
   const rabattProsent =
     prisinfo.grunn === 'dato' ? Math.round((1 - prisinfo.pris / prisinfo.ordinaerPris) * 100) : null;
@@ -65,7 +67,7 @@ function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel }:
       <LeggTilKnapp
         navn={vare.navn}
         antallIKurv={antallIKurv}
-        aktiv={kanLeggeTil}
+        aktiv={kanLeggeTil && kanBestilles}
         onPress={() => onLeggTil(vare)}
       />
     </View>

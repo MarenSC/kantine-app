@@ -65,6 +65,10 @@ export interface Vare {
   antallIgjen: number;
   /** Produktbilde, f.eks. require('../../assets/images/mat/kaffe.jpg') */
   bilde?: ImageSourcePropType;
+  /** Ukedager varen serveres (1 = mandag … 5 = fredag). Mangler = hver dag. */
+  dager?: number[];
+  /** Gir stempel på stempelkortet (kaffe) */
+  stempelkort?: boolean;
 }
 
 export interface Handlekurvlinje {
@@ -82,6 +86,12 @@ export interface Bestillingslinje {
   antall: number;
   /** Prisen per stykk på bestillingstidspunktet (inkl. rabatt) */
   stykkpris: number;
+  /** Ordinær pris per stykk, for å regne ut hvor mye som ble spart */
+  ordinaerPris: number;
+  /** True hvis varen hadde datorabatt, altså ble "reddet" fra å bli kastet */
+  reddet: boolean;
+  /** True hvis varen gir stempel på stempelkortet */
+  stempel: boolean;
 }
 
 export interface Student {
@@ -98,6 +108,8 @@ export interface Preferanser {
   allergener: string[];
   vegetar: boolean;
   favorittKantineId: string | null;
+  /** Vis varsel når favorittkantina har varer på «Redd maten» */
+  varselReddMaten: boolean;
 }
 
 export interface Bestilling {
@@ -111,4 +123,15 @@ export interface Bestilling {
   opprettet: string;
   /** Kode studenten viser frem ved henting */
   hentekode: string;
+  /** Satt av kantina i kantinevisningen. Mangler = simulert status. */
+  status?: Bestillingssteg;
+  tilbakemelding?: Tilbakemelding;
+}
+
+export type Bestillingssteg = 'mottatt' | 'tilberedes' | 'klar' | 'utlevert';
+
+export interface Tilbakemelding {
+  /** 1–5 */
+  stjerner: number;
+  kommentar?: string;
 }

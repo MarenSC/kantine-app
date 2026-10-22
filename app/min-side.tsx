@@ -8,6 +8,7 @@ import { FeideLoggInnKnapp } from '../src/components/FeideLoggInnKnapp';
 import { Knapp } from '../src/components/Knapp';
 import { Merkelapp } from '../src/components/Merkelapp';
 import { initialer } from '../src/components/ProfilKnapp';
+import { Stempelkort } from '../src/components/Stempelkort';
 import { Valgbrikke } from '../src/components/Valgbrikke';
 import { useBestilling } from '../src/context/BestillingContext';
 import { useBruker } from '../src/context/BrukerContext';
@@ -60,8 +61,8 @@ function LoggInnVisning() {
 // ---------- Innlogget ----------
 
 function InnloggetVisning() {
-  const { student, preferanser, loggUt, settVegetar, vekslAllergen, settFavoritt } = useBruker();
-  const { bestillinger } = useBestilling();
+  const { student, preferanser, loggUt, settVegetar, vekslAllergen, settFavoritt, settVarselReddMaten } = useBruker();
+  const { bestillinger, statistikk } = useBestilling();
   const naa = useNaa();
 
   if (!student) return null;
@@ -119,6 +120,26 @@ function InnloggetVisning() {
         ) : null}
       </Seksjon>
 
+      {/* Matsvinn */}
+      <View style={[styles.kort, styles.innsats]}>
+        <Ionicons name="leaf" size={28} color={farger.suksess} />
+        <View style={styles.flex}>
+          <Text style={styles.innsatsTall}>
+            {statistikk.reddedeVarer} {statistikk.reddedeVarer === 1 ? 'vare' : 'varer'} reddet
+          </Text>
+          <Text style={skrift.liten}>
+            {statistikk.reddedeVarer > 0
+              ? `Du har kjøpt mat som ellers kunne blitt kastet, og spart ${formaterPris(statistikk.spartTotalt)} totalt.`
+              : 'Kjøp mat under «Redd maten» for å redusere matsvinn – og spare penger.'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Stempelkort */}
+      <View style={styles.kort}>
+        <Stempelkort stempler={statistikk.stempler} />
+      </View>
+
       {/* Kosthold */}
       <Seksjon
         tittel="Allergier og kosthold"
@@ -166,6 +187,41 @@ function InnloggetVisning() {
         </View>
       </Seksjon>
 
+      {/* Varsler */}
+      <Seksjon tittel="Varsler">
+        <View style={styles.bryterRad}>
+          <Text style={[skrift.brodtekst, styles.flex]}>Si fra når favorittkantina har «Redd maten»-tilbud</Text>
+          <Switch
+            value={preferanser.varselReddMaten}
+            onValueChange={settVarselReddMaten}
+            trackColor={{ true: farger.primaer, false: farger.kant }}
+            thumbColor={farger.hvit}
+            accessibilityLabel="Varsel om Redd maten"
+          />
+        </View>
+        <Text style={skrift.liten}>I prototypen vises varselet øverst på startsiden.</Text>
+      </Seksjon>
+
+      {/* Tilgjengelighet */}
+      <Seksjon tittel="Tilgjengelighet">
+        <Text style={skrift.brodtekst}>
+          Appen følger innstillingene på telefonen din: tekststørrelse, mørk modus og skjermleser (VoiceOver/TalkBack).
+        </Text>
+      </Seksjon>
+
+      <Pressable
+        onPress={() => router.push('/kantinevisning')}
+        accessibilityRole="link"
+        style={({ pressed }) => [styles.kort, styles.ansattLenke, pressed && { opacity: 0.8 }]}
+      >
+        <Ionicons name="restaurant-outline" size={22} color={farger.primaerMork} />
+        <View style={styles.flex}>
+          <Text style={skrift.fet}>Kantinevisning</Text>
+          <Text style={skrift.liten}>For ansatte: se og behandle bestillinger</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={farger.tekstDempet} />
+      </Pressable>
+
       <Knapp tittel="Logg ut" variant="sekundaer" onPress={loggUt} />
     </ScrollView>
   );
@@ -184,6 +240,26 @@ function Seksjon({ tittel, undertekst, children }: { tittel: string; undertekst?
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    gap: 2,
+  },
+  innsats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: farger.suksessLys,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  innsatsTall: {
+    fontFamily: fonter.tittel,
+    fontSize: 20,
+    color: farger.suksess,
+  },
+  ansattLenke: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   skjerm: {
     flex: 1,
     backgroundColor: farger.bakgrunn,
