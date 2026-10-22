@@ -3,6 +3,7 @@
  * Alle priser er i hele kroner.
  * Datoer lagres som tekst på formatet "YYYY-MM-DD" (f.eks. "2026-10-22").
  */
+import type { ImageSourcePropType } from 'react-native';
 
 export type Kategori =
   | 'varmmat'
@@ -37,6 +38,8 @@ export interface Kantine {
   stenger: string;
   /** Om kantina kan levere mat dit studenten sitter */
   leveringTilBord: boolean;
+  /** Toppbilde på menysiden */
+  bilde?: ImageSourcePropType;
 }
 
 export interface Tilbud {
@@ -60,6 +63,8 @@ export interface Vare {
   allergener: string[];
   vegetar?: boolean;
   antallIgjen: number;
+  /** Produktbilde, f.eks. require('../../assets/images/mat/kaffe.jpg') */
+  bilde?: ImageSourcePropType;
 }
 
 export interface Handlekurvlinje {

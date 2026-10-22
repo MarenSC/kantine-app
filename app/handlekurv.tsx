@@ -20,7 +20,7 @@ import { Valgbrikke } from '../src/components/Valgbrikke';
 import { useBestilling } from '../src/context/BestillingContext';
 import { useBruker } from '../src/context/BrukerContext';
 import { hentKantine } from '../src/data/kantiner';
-import { avstand, farger, radius, skrift } from '../src/theme';
+import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
 import { formaterPris } from '../src/utils/pris';
 
@@ -252,8 +252,7 @@ const styles = StyleSheet.create({
   kort: {
     backgroundColor: farger.kort,
     borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: farger.kant,
+    ...skygge,
     padding: avstand.l,
     gap: avstand.s,
   },
@@ -273,7 +272,7 @@ const styles = StyleSheet.create({
   },
   vareNavn: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonter.fet,
     color: farger.tekst,
   },
   linjeHoyre: {
@@ -282,7 +281,7 @@ const styles = StyleSheet.create({
   },
   linjesum: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fonter.fet,
     color: farger.tekst,
   },
   seksjonTittel: {
@@ -311,7 +310,7 @@ const styles = StyleSheet.create({
   },
   valgTittel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonter.fet,
     color: farger.tekst,
   },
   gruppe: {
@@ -319,7 +318,7 @@ const styles = StyleSheet.create({
   },
   etikett: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonter.fet,
     color: farger.tekst,
   },
   brikker: {

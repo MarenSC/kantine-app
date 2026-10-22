@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps, ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { avstand, farger, skrift } from '../theme';
+import { avstand, farger, radius, skrift } from '../theme';
 
 interface Props {
   ikon: ComponentProps<typeof Ionicons>['name'];
@@ -15,7 +15,9 @@ interface Props {
 export function TomTilstand({ ikon, tittel, tekst, children }: Props) {
   return (
     <View style={styles.beholder}>
-      <Ionicons name={ikon} size={48} color={farger.tekstDempet} />
+      <View style={styles.ikon}>
+        <Ionicons name={ikon} size={34} color={farger.primaerMork} />
+      </View>
       <Text style={[skrift.overskrift, styles.midtstilt]}>{tittel}</Text>
       {tekst ? <Text style={[skrift.liten, styles.midtstilt]}>{tekst}</Text> : null}
       {children}
@@ -33,5 +35,13 @@ const styles = StyleSheet.create({
   },
   midtstilt: {
     textAlign: 'center',
+  },
+  ikon: {
+    width: 76,
+    height: 76,
+    borderRadius: radius.rund,
+    backgroundColor: farger.primaerLys,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

@@ -12,7 +12,7 @@ import { useBestilling } from '../src/context/BestillingContext';
 import { useBruker } from '../src/context/BrukerContext';
 import { hentKantine, kantiner } from '../src/data/kantiner';
 import { useNaa } from '../src/hooks/useNaa';
-import { avstand, farger, radius, skrift } from '../src/theme';
+import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
 import { klokkeslett } from '../src/utils/dato';
 import { alleAllergener } from '../src/utils/kosthold';
 import { formaterPris } from '../src/utils/pris';
@@ -75,7 +75,7 @@ function InnloggetVisning() {
           {student.institusjon ? <Text style={skrift.liten}>{student.institusjon}</Text> : null}
           <Merkelapp
             tekst={student.innloggetMed === 'feide' ? 'Innlogget med Feide' : 'Demobruker'}
-            variant={student.innloggetMed === 'feide' ? 'suksess' : 'info'}
+            variant="mork"
           />
         </View>
       </View>
@@ -124,6 +124,7 @@ function InnloggetVisning() {
             value={preferanser.vegetar}
             onValueChange={settVegetar}
             trackColor={{ true: farger.primaer, false: farger.kant }}
+            thumbColor={farger.hvit}
             accessibilityLabel="Vegetar"
           />
         </View>
@@ -202,27 +203,29 @@ const styles = StyleSheet.create({
   kort: {
     backgroundColor: farger.kort,
     borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: farger.kant,
+    ...skygge,
     padding: avstand.l,
     gap: avstand.m,
   },
   profil: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: farger.primaerLys,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   avatar: {
     width: 64,
     height: 64,
     borderRadius: radius.rund,
-    backgroundColor: farger.primaer,
+    backgroundColor: farger.morkFlate,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarTekst: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '700',
+    color: farger.hvit,
+    fontSize: 24,
+    fontFamily: fonter.fet,
   },
   profilTekst: {
     flex: 1,
@@ -243,13 +246,13 @@ const styles = StyleSheet.create({
   },
   radTittel: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonter.fet,
     color: farger.tekst,
   },
   lenke: {
     fontSize: 15,
-    fontWeight: '600',
-    color: farger.primaer,
+    fontFamily: fonter.fet,
+    color: farger.primaerMork,
   },
   bryterRad: {
     flexDirection: 'row',
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
   },
   etikett: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonter.fet,
     color: farger.tekst,
   },
   brikker: {

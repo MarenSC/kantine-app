@@ -8,7 +8,7 @@ import { TomTilstand } from '../../src/components/TomTilstand';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { hentKantine } from '../../src/data/kantiner';
 import { useNaa } from '../../src/hooks/useNaa';
-import { avstand, farger, radius, skrift } from '../../src/theme';
+import { avstand, farger, radius, skrift, skygge } from '../../src/theme';
 import { klokkeslett } from '../../src/utils/dato';
 import { formaterPris } from '../../src/utils/pris';
 import { hentStatus } from '../../src/utils/status';
@@ -73,8 +73,7 @@ const styles = StyleSheet.create({
     padding: avstand.l,
     backgroundColor: farger.kort,
     borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: farger.kant,
+    ...skygge,
   },
   tekst: {
     flex: 1,

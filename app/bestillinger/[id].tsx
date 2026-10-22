@@ -8,7 +8,7 @@ import { TomTilstand } from '../../src/components/TomTilstand';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
 import { useNaa } from '../../src/hooks/useNaa';
-import { avstand, farger, radius, skrift } from '../../src/theme';
+import { avstand, farger, fonter, radius, skrift, skygge } from '../../src/theme';
 import { klokkeslett } from '../../src/utils/dato';
 import { formaterPris } from '../../src/utils/pris';
 import { hentStatus } from '../../src/utils/status';
@@ -111,15 +111,14 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.rund,
-    backgroundColor: farger.suksess,
+    backgroundColor: farger.primaer,
     alignItems: 'center',
     justifyContent: 'center',
   },
   kort: {
     backgroundColor: farger.kort,
     borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: farger.kant,
+    ...skygge,
     padding: avstand.l,
     gap: avstand.m,
   },
@@ -129,9 +128,9 @@ const styles = StyleSheet.create({
   },
   kode: {
     fontSize: 40,
-    fontWeight: '800',
+    fontFamily: fonter.tittel,
     letterSpacing: 4,
-    color: farger.primaer,
+    color: farger.primaerMork,
   },
   rad: {
     flexDirection: 'row',

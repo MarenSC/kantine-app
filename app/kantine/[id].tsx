@@ -1,30 +1,51 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Merkelapp } from '../../src/components/Merkelapp';
+import { ProduktKort } from '../../src/components/ProduktKort';
+import { SioMerke } from '../../src/components/SioMerke';
 import { TomTilstand } from '../../src/components/TomTilstand';
 import { Valgbrikke } from '../../src/components/Valgbrikke';
+import { VareBilde } from '../../src/components/VareBilde';
 import { VareKort } from '../../src/components/VareKort';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { useBruker } from '../../src/context/BrukerContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
-import { kategoriRekkefolge, kategorinavn, varerIKantine } from '../../src/data/varer';
-import { avstand, farger, radius, skrift } from '../../src/theme';
+import { varerIKantine } from '../../src/data/varer';
+import { avstand, farger, fonter, radius, skrift } from '../../src/theme';
 import type { Kategori, Vare } from '../../src/types';
 import { erAapen } from '../../src/utils/dato';
 import { harKostholdsvalg, kostholdsadvarsel } from '../../src/utils/kosthold';
 import { beregnPris, erUtgaatt, formaterPris, type Prisinfo } from '../../src/utils/pris';
-
-type Filter = 'alle' | 'rabatt' | 'passer' | Kategori;
 
 interface VareMedPris {
   vare: Vare;
   prisinfo: Prisinfo;
   advarsel: string | null;
 }
+
+/** Menyen er delt i grupper. "Redd maten" samler varer med datorabatt. */
+type GruppeId = 'lunsj' | 'redd' | 'bakevarer' | 'snacks';
+
+const grupper: { id: GruppeId; tittel: string; kategorier: Kategori[]; rutenett?: boolean }[] = [
+  { id: 'lunsj', tittel: 'Lunsj', kategorier: ['varmmat', 'smorbrod', 'salat'] },
+  { id: 'redd', tittel: 'Redd maten', kategorier: [] },
+  { id: 'bakevarer', tittel: 'Bakevarer', kategorier: ['bakevarer'] },
+  { id: 'snacks', tittel: 'Drikke og snacks', kategorier: ['drikke', 'snacks'], rutenett: true },
+];
+
+function gruppeFor({ vare, prisinfo }: VareMedPris): GruppeId {
+  if (prisinfo.grunn === 'dato') return 'redd';
+  return grupper.find((g) => g.kategorier.includes(vare.kategori))?.id ?? 'lunsj';
+}
+
+type Filter = 'alle' | 'passer' | 'tilbud' | GruppeId;
+
+/** En rad i listen: enten ett vanlig kort, eller to produktkort side om side. */
+type Rad = { type: 'enkel'; v: VareMedPris } | { type: 'par'; a: VareMedPris; b?: VareMedPris };
 
 /** Menyen til én kantine. */
 export default function KantineSkjerm() {
@@ -48,25 +69,32 @@ export default function KantineSkjerm() {
     [id, preferanser],
   );
 
-  const antallRabatterte = alleVarer.filter((v) => v.prisinfo.grunn !== null).length;
-  const kategorierIMeny = kategoriRekkefolge.filter((k) => alleVarer.some((v) => v.vare.kategori === k));
+  const antallTilbud = alleVarer.filter((v) => v.prisinfo.grunn !== null).length;
+  const grupperIMeny = grupper.filter((g) => alleVarer.some((v) => gruppeFor(v) === g.id));
   const visPasserFilter = harKostholdsvalg(preferanser);
   const erFavoritt = preferanser.favorittKantineId === id;
 
   const seksjoner = useMemo(() => {
-    const filtrert = alleVarer.filter(({ vare, prisinfo, advarsel }) => {
+    const filtrert = alleVarer.filter((v) => {
       if (filter === 'alle') return true;
-      if (filter === 'rabatt') return prisinfo.grunn !== null;
-      if (filter === 'passer') return advarsel === null;
-      return vare.kategori === filter;
+      if (filter === 'passer') return v.advarsel === null;
+      if (filter === 'tilbud') return v.prisinfo.grunn !== null;
+      return gruppeFor(v) === filter;
     });
 
-    return kategoriRekkefolge
-      .map((kategori) => ({
-        tittel: kategorinavn[kategori],
-        data: filtrert.filter((v) => v.vare.kategori === kategori),
-      }))
-      .filter((seksjon) => seksjon.data.length > 0);
+    return grupper
+      .map((g) => {
+        const iGruppe = filtrert.filter((v) => gruppeFor(v) === g.id);
+        const data: Rad[] = g.rutenett
+          ? Array.from({ length: Math.ceil(iGruppe.length / 2) }, (_, i) => ({
+              type: 'par' as const,
+              a: iGruppe[i * 2],
+              b: iGruppe[i * 2 + 1],
+            }))
+          : iGruppe.map((v) => ({ type: 'enkel' as const, v }));
+        return { tittel: g.tittel, data };
+      })
+      .filter((s) => s.data.length > 0);
   }, [alleVarer, filter]);
 
   const kurvErHer = kurvKantineId === id && antallIKurv > 0;
@@ -98,91 +126,102 @@ export default function KantineSkjerm() {
   const bygg = hentBygg(kantine.byggId);
   const aapen = erAapen(kantine.aapner, kantine.stenger);
 
+  const kortProps = (v: VareMedPris) => ({
+    vare: v.vare,
+    prisinfo: v.prisinfo,
+    advarsel: v.advarsel,
+    antallIKurv: kurvKantineId === id ? antallAvVare(v.vare.id) : 0,
+    onLeggTil: haandterLeggTil,
+  });
+
   return (
     <View style={styles.skjerm}>
-      <Stack.Screen options={{ title: kantine.navn }} />
-
       <SectionList
         sections={seksjoner}
-        keyExtractor={(item) => item.vare.id}
+        keyExtractor={(rad) => (rad.type === 'enkel' ? rad.v.vare.id : rad.a.vare.id)}
         stickySectionHeadersEnabled={false}
-        contentContainerStyle={[styles.liste, { paddingBottom: kurvErHer ? 110 : avstand.xl }]}
+        contentContainerStyle={{ paddingBottom: kurvErHer ? 120 : avstand.xxl }}
         ListHeaderComponent={
-          <View style={styles.topp}>
-            <View style={styles.toppRad}>
-              <Text style={[skrift.liten, styles.flex]}>
-                {bygg?.navn} · {kantine.plassering}
-              </Text>
+          <View>
+            <VareBilde bilde={kantine.bilde} style={[styles.toppbilde, { height: 210 + insets.top }]} />
+            <View style={[styles.toppknapper, { top: insets.top + avstand.s }]}>
+              <Pressable
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+                accessibilityRole="button"
+                accessibilityLabel="Tilbake"
+                style={styles.rundKnapp}
+              >
+                <Ionicons name="chevron-back" size={22} color={farger.tekst} />
+              </Pressable>
               <Pressable
                 onPress={() => settFavoritt(erFavoritt ? null : kantine.id)}
                 accessibilityRole="button"
                 accessibilityLabel={erFavoritt ? 'Fjern som favoritt' : 'Sett som favoritt'}
-                hitSlop={10}
-                style={styles.favorittKnapp}
+                style={styles.rundKnapp}
               >
                 <Ionicons
                   name={erFavoritt ? 'heart' : 'heart-outline'}
-                  size={20}
-                  color={erFavoritt ? farger.tilbud : farger.tekstDempet}
+                  size={21}
+                  color={erFavoritt ? farger.primaer : farger.tekst}
                 />
-                <Text style={skrift.liten}>Favoritt</Text>
               </Pressable>
             </View>
-            <View style={styles.merkelapper}>
-              <Merkelapp
-                tekst={aapen ? `Åpent til ${kantine.stenger}` : `Stengt · åpner ${kantine.aapner}`}
-                variant={aapen ? 'suksess' : 'tilbud'}
-              />
-              {kantine.leveringTilBord && <Merkelapp tekst="Levering til bord" />}
-            </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filtre}
-            >
-              <Valgbrikke tekst="Alle" valgt={filter === 'alle'} onPress={() => setFilter('alle')} />
-              {visPasserFilter && (
-                <Valgbrikke
-                  tekst="Passer for meg"
-                  valgt={filter === 'passer'}
-                  onPress={() => setFilter('passer')}
+            <View style={styles.ark}>
+              <Text style={skrift.stor}>{kantine.navn}</Text>
+              <View style={styles.infoRad}>
+                <Merkelapp
+                  tekst={aapen ? `Åpent til ${kantine.stenger}` : `Stengt · åpner ${kantine.aapner}`}
+                  variant={aapen ? 'suksess' : 'info'}
                 />
-              )}
-              {antallRabatterte > 0 && (
-                <Valgbrikke
-                  tekst={`Tilbud og rabatt (${antallRabatterte})`}
-                  valgt={filter === 'rabatt'}
-                  onPress={() => setFilter('rabatt')}
-                />
-              )}
-              {kategorierIMeny.map((k) => (
-                <Valgbrikke
-                  key={k}
-                  tekst={kategorinavn[k]}
-                  valgt={filter === k}
-                  onPress={() => setFilter(k)}
-                />
-              ))}
-            </ScrollView>
+                <Text style={skrift.liten}>
+                  {bygg?.kortnavn} · {kantine.plassering}
+                  {kantine.leveringTilBord ? ' · levering til bord' : ''}
+                </Text>
+              </View>
+              <SioMerke />
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filtre}
+                style={styles.filterRad}
+              >
+                <Valgbrikke tekst="Alle" valgt={filter === 'alle'} onPress={() => setFilter('alle')} />
+                {visPasserFilter && (
+                  <Valgbrikke tekst="Passer for meg" valgt={filter === 'passer'} onPress={() => setFilter('passer')} />
+                )}
+                {antallTilbud > 0 && (
+                  <Valgbrikke
+                    tekst={`Tilbud (${antallTilbud})`}
+                    valgt={filter === 'tilbud'}
+                    onPress={() => setFilter('tilbud')}
+                  />
+                )}
+                {grupperIMeny
+                  .filter((g) => g.id !== 'redd')
+                  .map((g) => (
+                    <Valgbrikke key={g.id} tekst={g.tittel} valgt={filter === g.id} onPress={() => setFilter(g.id)} />
+                  ))}
+              </ScrollView>
+            </View>
           </View>
         }
-        renderSectionHeader={({ section }) => (
-          <Text style={styles.seksjonTittel}>{section.tittel}</Text>
-        )}
-        renderItem={({ item }) => (
-          <VareKort
-            vare={item.vare}
-            prisinfo={item.prisinfo}
-            antallIKurv={kurvKantineId === id ? antallAvVare(item.vare.id) : 0}
-            onLeggTil={haandterLeggTil}
-            advarsel={item.advarsel}
-          />
-        )}
-        ItemSeparatorComponent={() => <View style={{ height: avstand.m }} />}
-        ListEmptyComponent={
-          <TomTilstand ikon="restaurant-outline" tittel="Ingen varer her akkurat nå" />
+        renderSectionHeader={({ section }) => <Text style={styles.seksjonTittel}>{section.tittel}</Text>}
+        renderItem={({ item }) =>
+          item.type === 'enkel' ? (
+            <View style={styles.rad}>
+              <VareKort {...kortProps(item.v)} />
+            </View>
+          ) : (
+            <View style={[styles.rad, styles.parRad]}>
+              <ProduktKort {...kortProps(item.a)} />
+              {item.b ? <ProduktKort {...kortProps(item.b)} /> : <View style={styles.flex} />}
+            </View>
+          )
         }
+        ItemSeparatorComponent={() => <View style={{ height: avstand.m }} />}
+        ListEmptyComponent={<TomTilstand ikon="restaurant-outline" tittel="Ingen varer her akkurat nå" />}
       />
 
       {kurvErHer && (
@@ -197,7 +236,6 @@ export default function KantineSkjerm() {
             </View>
             <Text style={styles.kurvTekst}>Gå til handlekurv</Text>
             <Text style={styles.kurvPris}>{formaterPris(totalpris)}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
           </Pressable>
         </View>
       )}
@@ -208,39 +246,64 @@ export default function KantineSkjerm() {
 const styles = StyleSheet.create({
   skjerm: {
     flex: 1,
+    backgroundColor: farger.bakgrunn,
   },
-  liste: {
-    padding: avstand.l,
+  toppbilde: {
+    borderRadius: 0,
   },
-  topp: {
+  toppknapper: {
+    position: 'absolute',
+    left: avstand.l,
+    right: avstand.l,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  rundKnapp: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.rund,
+    backgroundColor: farger.kort,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ark: {
+    marginTop: -24,
+    paddingTop: avstand.l + 4,
+    paddingHorizontal: avstand.l + 4,
     gap: avstand.s,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    backgroundColor: farger.bakgrunn,
   },
-  toppRad: {
+  infoRad: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: avstand.s,
-  },
-  flex: {
-    flex: 1,
-  },
-  favorittKnapp: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: avstand.xs,
-  },
-  merkelapper: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: avstand.s,
   },
+  filterRad: {
+    marginHorizontal: -(avstand.l + 4),
+  },
   filtre: {
     gap: avstand.s,
-    paddingVertical: avstand.m,
+    paddingVertical: avstand.s,
+    paddingHorizontal: avstand.l + 4,
   },
   seksjonTittel: {
     ...skrift.overskrift,
     marginTop: avstand.l,
     marginBottom: avstand.m,
+    paddingHorizontal: avstand.l + 4,
+  },
+  rad: {
+    paddingHorizontal: avstand.l + 4,
+  },
+  parRad: {
+    flexDirection: 'row',
+    gap: avstand.m,
+  },
+  flex: {
+    flex: 1,
   },
   kurvBar: {
     position: 'absolute',
@@ -248,42 +311,44 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: avstand.l,
-    paddingTop: avstand.m,
-    backgroundColor: farger.bakgrunn,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: farger.kant,
+    paddingTop: avstand.s,
   },
   kurvKnapp: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: avstand.m,
-    minHeight: 54,
-    paddingHorizontal: avstand.l,
-    borderRadius: radius.m,
-    backgroundColor: farger.primaer,
+    minHeight: 58,
+    paddingHorizontal: avstand.l + 2,
+    borderRadius: radius.l,
+    backgroundColor: farger.morkFlate,
+    shadowColor: '#33281F',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   kurvAntall: {
-    minWidth: 26,
-    height: 26,
+    minWidth: 28,
+    height: 28,
     paddingHorizontal: 6,
     borderRadius: radius.rund,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: farger.primaer,
     alignItems: 'center',
     justifyContent: 'center',
   },
   kurvAntallTekst: {
-    color: farger.primaer,
-    fontWeight: '700',
+    color: farger.hvit,
+    fontFamily: fonter.fet,
   },
   kurvTekst: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
     flex: 1,
+    color: farger.bakgrunn,
+    fontFamily: fonter.fet,
+    fontSize: 16,
   },
   kurvPris: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+    color: farger.hvit,
+    fontFamily: fonter.tittel,
+    fontSize: 17,
   },
 });

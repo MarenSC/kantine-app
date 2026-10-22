@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { avstand, farger, radius } from '../theme';
+import { avstand, farger, fonter, radius } from '../theme';
 
 interface Props {
   antall: number;
@@ -22,7 +22,7 @@ export function Antallvelger({ antall, maks, onEndre }: Props) {
         style={styles.knapp}
         hitSlop={8}
       >
-        <Ionicons name={antall === 1 ? 'trash-outline' : 'remove'} size={18} color={farger.primaer} />
+        <Ionicons name={antall === 1 ? 'trash-outline' : 'remove'} size={18} color={farger.primaerMork} />
       </Pressable>
 
       <Text style={styles.antall} accessibilityLabel={`Antall: ${antall}`}>
@@ -37,7 +37,7 @@ export function Antallvelger({ antall, maks, onEndre }: Props) {
         style={[styles.knapp, !kanOke && styles.deaktivert]}
         hitSlop={8}
       >
-        <Ionicons name="add" size={18} color={kanOke ? farger.primaer : farger.deaktivert} />
+        <Ionicons name="add" size={18} color={kanOke ? farger.primaerMork : farger.tekstDempet} />
       </Pressable>
     </View>
   );
@@ -50,22 +50,21 @@ const styles = StyleSheet.create({
     gap: avstand.s,
   },
   knapp: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: radius.rund,
-    borderWidth: 1,
-    borderColor: farger.primaer,
+    backgroundColor: farger.primaerLys,
     alignItems: 'center',
     justifyContent: 'center',
   },
   deaktivert: {
-    borderColor: farger.deaktivert,
+    backgroundColor: farger.kant,
   },
   antall: {
     minWidth: 20,
     textAlign: 'center',
+    fontFamily: fonter.fet,
     fontSize: 16,
-    fontWeight: '600',
     color: farger.tekst,
   },
 });

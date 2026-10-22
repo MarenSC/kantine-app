@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { feideErKonfigurert } from '../auth/feide';
 import { useFeideInnlogging } from '../auth/useFeideInnlogging';
 import { DEMO_STUDENT, useBruker } from '../context/BrukerContext';
-import { avstand, farger, skrift } from '../theme';
+import { avstand, farger, fonter, skrift } from '../theme';
 import { Knapp } from './Knapp';
 
 /**
@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
   },
   feil: {
     color: farger.tilbud,
+    fontFamily: fonter.medium,
     fontSize: 14,
   },
 });

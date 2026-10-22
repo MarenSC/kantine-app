@@ -1,19 +1,18 @@
 import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-import { avstand, farger, radius } from '../theme';
+import { avstand, farger, fonter, radius } from '../theme';
 
 interface Props {
   tittel: string;
   onPress: () => void;
-  variant?: 'primaer' | 'sekundaer';
+  /** primaer = terrakotta, mork = mørk brun, sekundaer = kantlinje */
+  variant?: 'primaer' | 'mork' | 'sekundaer';
   deaktivert?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
-/** Standardknapp som brukes i hele appen. */
+/** Pilleformet standardknapp. */
 export function Knapp({ tittel, onPress, variant = 'primaer', deaktivert = false, style }: Props) {
-  const erPrimaer = variant === 'primaer';
-
   return (
     <Pressable
       onPress={onPress}
@@ -22,13 +21,13 @@ export function Knapp({ tittel, onPress, variant = 'primaer', deaktivert = false
       accessibilityState={{ disabled: deaktivert }}
       style={({ pressed }) => [
         styles.knapp,
-        erPrimaer ? styles.primaer : styles.sekundaer,
+        styles[variant],
         deaktivert && styles.deaktivert,
         pressed && !deaktivert && styles.trykket,
         style,
       ]}
     >
-      <Text style={[styles.tekst, erPrimaer ? styles.tekstPrimaer : styles.tekstSekundaer]}>
+      <Text style={[styles.tekst, variant === 'sekundaer' ? styles.tekstSekundaer : styles.tekstLys]}>
         {tittel}
       </Text>
     </Pressable>
@@ -38,18 +37,21 @@ export function Knapp({ tittel, onPress, variant = 'primaer', deaktivert = false
 const styles = StyleSheet.create({
   knapp: {
     minHeight: 50,
-    paddingHorizontal: avstand.l,
-    borderRadius: radius.m,
+    paddingHorizontal: avstand.xl,
+    borderRadius: radius.rund,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaer: {
     backgroundColor: farger.primaer,
   },
+  mork: {
+    backgroundColor: farger.morkFlate,
+  },
   sekundaer: {
-    backgroundColor: farger.kort,
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: farger.primaer,
+    borderColor: farger.kant,
   },
   deaktivert: {
     backgroundColor: farger.deaktivert,
@@ -59,13 +61,13 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   tekst: {
+    fontFamily: fonter.fet,
     fontSize: 16,
-    fontWeight: '600',
   },
-  tekstPrimaer: {
-    color: '#FFFFFF',
+  tekstLys: {
+    color: farger.hvit,
   },
   tekstSekundaer: {
-    color: farger.primaer,
+    color: farger.tekst,
   },
 });

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBruker } from '../context/BrukerContext';
-import { avstand, farger, radius } from '../theme';
+import { avstand, farger, fonter, radius } from '../theme';
 
 /** "Tom Nordmann" -> "TN" */
 export function initialer(navn: string): string {
@@ -32,7 +32,7 @@ export function ProfilKnapp() {
           <Text style={styles.initialer}>{initialer(student.navn)}</Text>
         </View>
       ) : (
-        <Ionicons name="person-circle-outline" size={28} color={farger.primaer} />
+        <Ionicons name="person-circle-outline" size={32} color={farger.tekst} />
       )}
     </Pressable>
   );
@@ -43,16 +43,16 @@ const styles = StyleSheet.create({
     padding: avstand.xs,
   },
   avatar: {
-    width: 30,
-    height: 30,
+    width: 36,
+    height: 36,
     borderRadius: radius.rund,
-    backgroundColor: farger.primaer,
+    backgroundColor: farger.morkFlate,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initialer: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
+    color: farger.hvit,
+    fontSize: 13,
+    fontFamily: fonter.fet,
   },
 });

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { avstand, farger, radius } from '../theme';
+import { avstand, farger, fonter, radius } from '../theme';
 
 interface Props {
   tekst: string;
@@ -8,7 +8,7 @@ interface Props {
   onPress: () => void;
 }
 
-/** Klikkbar "chip" for filtre og valg, f.eks. kategori eller hentetid. */
+/** Klikkbar "chip" for filtre og valg. Valgt = lys sand med mørk terrakotta-tekst. */
 export function Valgbrikke({ tekst, valgt, onPress }: Props) {
   return (
     <Pressable
@@ -24,23 +24,24 @@ export function Valgbrikke({ tekst, valgt, onPress }: Props) {
 
 const styles = StyleSheet.create({
   brikke: {
-    paddingHorizontal: avstand.m,
-    paddingVertical: avstand.s,
+    minHeight: 38,
+    justifyContent: 'center',
+    paddingHorizontal: avstand.l,
     borderRadius: radius.rund,
     borderWidth: 1,
     borderColor: farger.kant,
-    backgroundColor: farger.kort,
   },
   valgt: {
-    backgroundColor: farger.primaer,
-    borderColor: farger.primaer,
+    backgroundColor: farger.primaerLys,
+    borderColor: farger.primaerLys,
   },
   tekst: {
+    fontFamily: fonter.medium,
     fontSize: 14,
-    fontWeight: '500',
     color: farger.tekst,
   },
   tekstValgt: {
-    color: '#FFFFFF',
+    fontFamily: fonter.fet,
+    color: farger.primaerMork,
   },
 });

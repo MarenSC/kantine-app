@@ -1,14 +1,15 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { memo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { avstand, farger, radius } from '../theme';
+import { avstand, farger, fonter, radius, skygge } from '../theme';
 import type { Vare } from '../types';
 import type { Prisinfo } from '../utils/pris';
+import { LeggTilKnapp } from './LeggTilKnapp';
 import { Merkelapp } from './Merkelapp';
 import { Pris } from './Pris';
+import { VareBilde } from './VareBilde';
 
-interface Props {
+export interface VareKortProps {
   vare: Vare;
   prisinfo: Prisinfo;
   antallIKurv: number;
@@ -17,150 +18,101 @@ interface Props {
   advarsel?: string | null;
 }
 
-/** Ett produkt på menyen, med pris, rabatt og "legg til"-knapp. */
-function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel }: Props) {
+/** Info om utsolgt/få igjen, brukt av både VareKort og ProduktKort. */
+export function lagerstatus(vare: Vare, antallIKurv: number) {
   const utsolgt = vare.antallIgjen === 0;
-  const kanLeggeTil = !utsolgt && antallIKurv < vare.antallIgjen;
-  const faaIgjen = !utsolgt && vare.antallIgjen <= 5;
+  return {
+    utsolgt,
+    kanLeggeTil: !utsolgt && antallIKurv < vare.antallIgjen,
+    faaIgjen: !utsolgt && vare.antallIgjen <= 5,
+  };
+}
+
+/** Én rett på menyen: bilde til venstre, tekst i midten, "+" til høyre. */
+function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel }: VareKortProps) {
+  const { utsolgt, kanLeggeTil, faaIgjen } = lagerstatus(vare, antallIKurv);
+  const rabattProsent =
+    prisinfo.grunn === 'dato' ? Math.round((1 - prisinfo.pris / prisinfo.ordinaerPris) * 100) : null;
+  const datoTekst =
+    prisinfo.grunn === 'dato'
+      ? prisinfo.etikett?.includes('i dag')
+        ? 'Siste salgsdag i dag'
+        : 'Siste salgsdag i morgen'
+      : null;
 
   return (
     <View style={[styles.kort, utsolgt && styles.utsolgt]}>
-      <View style={styles.innhold}>
-        {prisinfo.etikett ? (
-          <Merkelapp
-            tekst={prisinfo.etikett}
-            variant={prisinfo.grunn === 'dato' ? 'dato' : 'tilbud'}
-          />
-        ) : null}
-
-        <View style={styles.navnRad}>
-          <Text style={styles.navn}>{vare.navn}</Text>
-          {vare.vegetar && (
-            <Ionicons name="leaf" size={14} color={farger.suksess} accessibilityLabel="Vegetar" />
-          )}
-        </View>
-
-        <Text style={styles.beskrivelse}>{vare.beskrivelse}</Text>
-
-        {vare.allergener.length > 0 && (
-          <Text style={styles.allergener}>Allergener: {vare.allergener.join(', ')}</Text>
-        )}
-
-        {advarsel ? (
-          <View style={styles.advarsel}>
-            <Ionicons name="warning-outline" size={14} color={farger.tilbud} />
-            <Text style={styles.advarselTekst}>{advarsel}</Text>
+      <VareBilde bilde={vare.bilde} style={styles.bilde}>
+        {rabattProsent ? (
+          <View style={styles.bildeMerke}>
+            <Merkelapp tekst={`−${rabattProsent} %`} variant="mork" />
           </View>
         ) : null}
+      </VareBilde>
 
-        {utsolgt && <Text style={styles.lager}>Utsolgt</Text>}
-        {faaIgjen && <Text style={styles.lager}>Kun {vare.antallIgjen} igjen</Text>}
-      </View>
-
-      <View style={styles.hoyre}>
+      <View style={styles.innhold}>
+        {prisinfo.grunn === 'tilbud' && prisinfo.etikett ? <Merkelapp tekst={prisinfo.etikett} variant="tilbud" /> : null}
+        <Text style={styles.navn}>{vare.navn}</Text>
+        <Text style={styles.beskrivelse} numberOfLines={2}>
+          {datoTekst ?? vare.beskrivelse}
+        </Text>
+        {advarsel ? <Merkelapp tekst={advarsel} variant="dato" /> : null}
+        {utsolgt ? <Text style={styles.lager}>Utsolgt</Text> : null}
+        {faaIgjen ? <Text style={styles.lager}>Kun {vare.antallIgjen} igjen</Text> : null}
         <Pris prisinfo={prisinfo} />
-        <Pressable
-          onPress={() => onLeggTil(vare)}
-          disabled={!kanLeggeTil}
-          accessibilityRole="button"
-          accessibilityLabel={`Legg ${vare.navn} i handlekurven`}
-          style={({ pressed }) => [
-            styles.leggTil,
-            !kanLeggeTil && styles.leggTilDeaktivert,
-            pressed && { opacity: 0.8 },
-          ]}
-          hitSlop={6}
-        >
-          {antallIKurv > 0 ? (
-            <Text style={styles.antall}>{antallIKurv}</Text>
-          ) : (
-            <Ionicons name="add" size={22} color="#FFFFFF" />
-          )}
-        </Pressable>
       </View>
+
+      <LeggTilKnapp
+        navn={vare.navn}
+        antallIKurv={antallIKurv}
+        aktiv={kanLeggeTil}
+        onPress={() => onLeggTil(vare)}
+      />
     </View>
   );
 }
 
-/** memo gjør at kortet bare tegnes på nytt når dataene endrer seg. */
 export const VareKort = memo(VareKortKomponent);
 
 const styles = StyleSheet.create({
   kort: {
     flexDirection: 'row',
-    gap: avstand.m,
-    padding: avstand.l,
+    alignItems: 'center',
+    gap: avstand.m + 2,
+    padding: avstand.s + 2,
     backgroundColor: farger.kort,
     borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: farger.kant,
+    ...skygge,
   },
   utsolgt: {
     opacity: 0.55,
   },
+  bilde: {
+    width: 84,
+    height: 84,
+  },
+  bildeMerke: {
+    position: 'absolute',
+    left: 6,
+    top: 6,
+  },
   innhold: {
     flex: 1,
-    gap: avstand.xs,
-  },
-  navnRad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: avstand.xs,
+    gap: 3,
   },
   navn: {
+    fontFamily: fonter.fet,
     fontSize: 16,
-    fontWeight: '600',
     color: farger.tekst,
-    flexShrink: 1,
   },
   beskrivelse: {
-    fontSize: 14,
+    fontFamily: fonter.vanlig,
+    fontSize: 13,
     color: farger.tekstDempet,
-  },
-  allergener: {
-    fontSize: 12,
-    color: farger.tekstDempet,
-    fontStyle: 'italic',
-  },
-  advarsel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: avstand.xs,
-    alignSelf: 'flex-start',
-    paddingHorizontal: avstand.s,
-    paddingVertical: 2,
-    borderRadius: radius.s,
-    backgroundColor: farger.tilbudLys,
-  },
-  advarselTekst: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: farger.tilbud,
   },
   lager: {
+    fontFamily: fonter.fet,
     fontSize: 12,
-    fontWeight: '600',
-    color: farger.tilbud,
-  },
-  hoyre: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: avstand.s,
-  },
-  leggTil: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.rund,
-    backgroundColor: farger.primaer,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leggTilDeaktivert: {
-    backgroundColor: farger.deaktivert,
-  },
-  antall: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+    color: farger.primaerMork,
   },
 });

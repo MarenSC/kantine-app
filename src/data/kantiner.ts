@@ -27,6 +27,7 @@ export const kantiner: Kantine[] = [
     aapner: '08:00',
     stenger: '16:00',
     leveringTilBord: true,
+    bilde: require('../../assets/images/mat/kaffe.jpg'),
   },
   {
     id: 'p35-kaffebar',
@@ -36,6 +37,7 @@ export const kantiner: Kantine[] = [
     aapner: '08:00',
     stenger: '18:00',
     leveringTilBord: false,
+    bilde: require('../../assets/images/mat/latte.jpg'),
   },
   {
     id: 'p46-kafe',
