@@ -1,56 +1,61 @@
-# Welcome to your Expo app 👋
+# Kantina – kantineapp for OsloMet-studenter
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+En mobilapp der studenter kan velge kantine ut fra hvilket bygg de er i, se menyen med priser og tilbud, og finne varer som er rabattert fordi datoen nærmer seg. Appen lar dem også reservere mat de henter selv, eller bestille mat levert dit de sitter.
 
-## Get started
+> **Prototype:** Kantiner, menyer og priser er eksempeldata. Bestillinger lagres bare i minnet på telefonen, og statusen på bestillingen er simulert. Ingen betaling eller server er koblet til ennå.
 
-1. Install dependencies
+## Funksjoner
 
-   ```bash
-   npm install
-   ```
+- Velg kantine, gruppert etter campus og bygg, med åpningstider og «Åpent nå»
+- Meny gruppert etter kategori, med filter for «Tilbud og rabatt»
+- Automatisk **datorabatt**: 50 % siste salgsdag, 30 % dagen før (endres i `src/utils/pris.ts`)
+- Faste **tilbud** per vare
+- Handlekurv med antall, lagerbegrensning og «du sparer»
+- **Hent selv** med valgt hentetid, eller **lever til meg** med plassering
+- Kvittering med hentekode og bestillingsoversikt
 
-2. Start the app
+## Teknologi
 
-   ```bash
-   npx expo start
-   ```
+- [Expo](https://expo.dev) og React Native med TypeScript
+- [Expo Router](https://docs.expo.dev/router/introduction/) for navigasjon (filbasert: hver fil i `app/` er en skjerm)
+- React Context og `useReducer` for handlekurven
 
-In the output, you'll find options to open the app in a
+## Mappestruktur
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/                      Skjermer (Expo Router)
+  _layout.tsx             Navigasjon og felles oppsett
+  index.tsx               Velg kantine
+  kantine/[id].tsx        Menyen til én kantine
+  handlekurv.tsx          Handlekurv og bestilling
+  bestillinger/index.tsx  Mine bestillinger
+  bestillinger/[id].tsx   Kvittering og status
+src/
+  components/             Gjenbrukbare UI-komponenter
+  context/                Handlekurv og bestillinger (global state)
+  data/                   Eksempeldata: kantiner og varer
+  hooks/                  Egne React-hooks
+  utils/                  Dato, pris og status
+  theme.ts                Farger, avstander og tekststiler
+  types.ts                Datatyper
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## Kom i gang
 
-### Other setup steps
+Du trenger [Node.js](https://nodejs.org) (LTS-versjonen), [VS Code](https://code.visualstudio.com) og appen **Expo Go** på telefonen (App Store / Google Play).
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npm install
+npx expo start
+```
 
-## Learn more
+Skann QR-koden med kameraet (iPhone) eller i Expo Go (Android). Telefonen og PC-en må være på samme nettverk.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Videre arbeid
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [ ] Lagre bestillinger på telefonen (AsyncStorage)
+- [ ] Backend/database for menyer, lager og bestillinger (f.eks. Supabase eller Firebase)
+- [ ] Innlogging med studentkonto
+- [ ] Betaling (f.eks. Vipps)
+- [ ] Egen app for kantinepersonalet som oppdaterer status
+- [ ] Huske sist valgte bygg
