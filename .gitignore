@@ -41,3 +41,7 @@ example
 # generated native folders
 /ios
 /android
+
+# Editor- og AI-innstillinger (lokale)
+.claude/
+.vscode/
