@@ -13,10 +13,12 @@ interface Props {
   prisinfo: Prisinfo;
   antallIKurv: number;
   onLeggTil: (vare: Vare) => void;
+  /** Vises hvis varen ikke passer studentens kosthold, f.eks. "Inneholder gluten" */
+  advarsel?: string | null;
 }
 
 /** Ett produkt på menyen, med pris, rabatt og "legg til"-knapp. */
-function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil }: Props) {
+function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel }: Props) {
   const utsolgt = vare.antallIgjen === 0;
   const kanLeggeTil = !utsolgt && antallIKurv < vare.antallIgjen;
   const faaIgjen = !utsolgt && vare.antallIgjen <= 5;
@@ -43,6 +45,13 @@ function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil }: Props) {
         {vare.allergener.length > 0 && (
           <Text style={styles.allergener}>Allergener: {vare.allergener.join(', ')}</Text>
         )}
+
+        {advarsel ? (
+          <View style={styles.advarsel}>
+            <Ionicons name="warning-outline" size={14} color={farger.tilbud} />
+            <Text style={styles.advarselTekst}>{advarsel}</Text>
+          </View>
+        ) : null}
 
         {utsolgt && <Text style={styles.lager}>Utsolgt</Text>}
         {faaIgjen && <Text style={styles.lager}>Kun {vare.antallIgjen} igjen</Text>}
@@ -112,6 +121,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: farger.tekstDempet,
     fontStyle: 'italic',
+  },
+  advarsel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.xs,
+    alignSelf: 'flex-start',
+    paddingHorizontal: avstand.s,
+    paddingVertical: 2,
+    borderRadius: radius.s,
+    backgroundColor: farger.tilbudLys,
+  },
+  advarselTekst: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: farger.tilbud,
   },
   lager: {
     fontSize: 12,

@@ -1,38 +1,36 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Link, Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Merkelapp } from '../src/components/Merkelapp';
-import { useBestilling } from '../src/context/BestillingContext';
-import { byggPaaCampus, campuser, kantinerIBygg } from '../src/data/kantiner';
+import { useBruker } from '../src/context/BrukerContext';
+import { byggPaaCampus, campuser, hentBygg, hentKantine, kantinerIBygg } from '../src/data/kantiner';
 import { avstand, farger, radius, skrift } from '../src/theme';
 import type { Kantine } from '../src/types';
 import { erAapen } from '../src/utils/dato';
 
 /** Startskjerm: studenten velger hvilken kantine hun/han vil se. */
 export default function VelgKantineSkjerm() {
-  const { bestillinger } = useBestilling();
+  const { student, preferanser } = useBruker();
+  const favoritt = preferanser.favorittKantineId ? hentKantine(preferanser.favorittKantineId) : undefined;
+  const fornavn = student?.navn.split(' ')[0];
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Link href="/bestillinger" asChild>
-              <Pressable accessibilityLabel="Mine bestillinger" hitSlop={10} style={styles.headerKnapp}>
-                <Ionicons name="receipt-outline" size={24} color={farger.primaer} />
-                {bestillinger.length > 0 && <View style={styles.prikk} />}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-
       <ScrollView contentContainerStyle={styles.innhold}>
-        <Text style={skrift.tittel}>Hvor er du i dag?</Text>
+        <Text style={skrift.tittel}>{fornavn ? `Hei, ${fornavn}!` : 'Hvor er du i dag?'}</Text>
         <Text style={skrift.liten}>
           Velg kantine for å se menyen, dagens tilbud og varer med datorabatt.
         </Text>
+
+        {favoritt && (
+          <View style={styles.campus}>
+            <Text style={styles.campusNavn}>Din favoritt</Text>
+            <View style={styles.bygg}>
+              <KantineRad kantine={favoritt} visBygg />
+            </View>
+          </View>
+        )}
 
         {campuser.map((campus) => (
           <View key={campus.id} style={styles.campus}>
@@ -59,19 +57,21 @@ export default function VelgKantineSkjerm() {
   );
 }
 
-function KantineRad({ kantine }: { kantine: Kantine }) {
+function KantineRad({ kantine, visBygg = false }: { kantine: Kantine; visBygg?: boolean }) {
   const aapen = erAapen(kantine.aapner, kantine.stenger);
+  const bygg = visBygg ? hentBygg(kantine.byggId) : undefined;
 
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: kantine.id } })}
       accessibilityRole="button"
       accessibilityLabel={`${kantine.navn}, ${aapen ? 'åpent' : 'stengt'}`}
-      style={({ pressed }) => [styles.kantine, pressed && styles.trykket]}
+      style={({ pressed }) => [styles.kantine, visBygg && styles.utenKant, pressed && styles.trykket]}
     >
       <View style={styles.kantineTekst}>
         <Text style={styles.kantineNavn}>{kantine.navn}</Text>
         <Text style={skrift.liten}>
+          {bygg ? `${bygg.navn} · ` : ''}
           {kantine.plassering} · {kantine.aapner}–{kantine.stenger}
         </Text>
         <View style={styles.merkelapper}>
@@ -89,17 +89,8 @@ const styles = StyleSheet.create({
     padding: avstand.l,
     gap: avstand.s,
   },
-  headerKnapp: {
-    padding: avstand.xs,
-  },
-  prikk: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 9,
-    height: 9,
-    borderRadius: radius.rund,
-    backgroundColor: farger.tilbud,
+  utenKant: {
+    borderTopWidth: 0,
   },
   campus: {
     marginTop: avstand.l,

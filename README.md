@@ -13,6 +13,21 @@ En mobilapp der studenter kan velge kantine ut fra hvilket bygg de er i, se meny
 - Handlekurv med antall, lagerbegrensning og «du sparer»
 - **Hent selv** med valgt hentetid, eller **lever til meg** med plassering
 - Kvittering med hentekode og bestillingsoversikt
+- **Min Side** (ikon øverst til høyre): profil, mine bestillinger, allergier og kosthold, favorittkantine
+- Menyen markerer varer som ikke passer kostholdet ditt, og har filteret «Passer for meg»
+- Innlogging kreves for å bestille. Innlogging og preferanser lagres på telefonen
+
+## Innlogging med Feide
+
+Appen bruker foreløpig **demo-innlogging** med en testbruker. Koden for ekte Feide (OpenID Connect med PKCE) ligger klar i `src/auth/`. Slik slår du den på:
+
+1. Registrer tjenesten i [Feides kundeportal](https://kunde.feide.no) og legg til en OIDC-konfigurasjon.
+2. Legg inn redirect-URL-en appen skriver ut i terminalen (`Feide redirect URI: …`).
+3. Slå på «Feide test users» for testing. OsloMet må aktivere tjenesten før ekte studenter kan logge inn.
+4. Lim inn client ID i `src/auth/feide.ts`.
+5. Bruk en development build (`npx expo run:ios`), siden Expo Go ikke støtter appens egen URL (`kantineapp://`).
+
+Se [Feides dokumentasjon](https://docs.feide.no/reference/oauth_oidc/openid_connect_details.html).
 
 ## Teknologi
 
@@ -55,7 +70,6 @@ Skann QR-koden med kameraet (iPhone) eller i Expo Go (Android). Telefonen og PC-
 
 - [ ] Lagre bestillinger på telefonen (AsyncStorage)
 - [ ] Backend/database for menyer, lager og bestillinger (f.eks. Supabase eller Firebase)
-- [ ] Innlogging med studentkonto
+- [ ] Ekte Feide-innlogging (se over)
 - [ ] Betaling (f.eks. Vipps)
 - [ ] Egen app for kantinepersonalet som oppdaterer status
-- [ ] Huske sist valgte bygg

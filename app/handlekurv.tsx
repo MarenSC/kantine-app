@@ -18,6 +18,7 @@ import { Knapp } from '../src/components/Knapp';
 import { TomTilstand } from '../src/components/TomTilstand';
 import { Valgbrikke } from '../src/components/Valgbrikke';
 import { useBestilling } from '../src/context/BestillingContext';
+import { useBruker } from '../src/context/BrukerContext';
 import { hentKantine } from '../src/data/kantiner';
 import { avstand, farger, radius, skrift } from '../src/theme';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
@@ -31,6 +32,7 @@ const HENTETIDER_MINUTTER = [10, 20, 30, 45, 60];
 export default function HandlekurvSkjerm() {
   const insets = useSafeAreaInsets();
   const { kurvKantineId, kurvVarer, totalpris, spart, settAntall, sendBestilling } = useBestilling();
+  const { student } = useBruker();
   const kantine = kurvKantineId ? hentKantine(kurvKantineId) : undefined;
 
   const [valg, setValg] = useState<Valg>('henting');
@@ -187,11 +189,15 @@ export default function HandlekurvSkjerm() {
       </ScrollView>
 
       <View style={[styles.bunn, { paddingBottom: Math.max(insets.bottom, avstand.l) }]}>
-        <Knapp
-          tittel={`Bekreft bestilling · ${formaterPris(totalpris)}`}
-          onPress={bekreft}
-          deaktivert={manglerPlassering}
-        />
+        {student ? (
+          <Knapp
+            tittel={`Bekreft bestilling · ${formaterPris(totalpris)}`}
+            onPress={bekreft}
+            deaktivert={manglerPlassering}
+          />
+        ) : (
+          <Knapp tittel="Logg inn med Feide for å bestille" onPress={() => router.push('/min-side')} />
+        )}
       </View>
     </KeyboardAvoidingView>
   );

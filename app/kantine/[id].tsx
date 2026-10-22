@@ -9,18 +9,21 @@ import { TomTilstand } from '../../src/components/TomTilstand';
 import { Valgbrikke } from '../../src/components/Valgbrikke';
 import { VareKort } from '../../src/components/VareKort';
 import { useBestilling } from '../../src/context/BestillingContext';
+import { useBruker } from '../../src/context/BrukerContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
 import { kategoriRekkefolge, kategorinavn, varerIKantine } from '../../src/data/varer';
 import { avstand, farger, radius, skrift } from '../../src/theme';
 import type { Kategori, Vare } from '../../src/types';
 import { erAapen } from '../../src/utils/dato';
+import { harKostholdsvalg, kostholdsadvarsel } from '../../src/utils/kosthold';
 import { beregnPris, erUtgaatt, formaterPris, type Prisinfo } from '../../src/utils/pris';
 
-type Filter = 'alle' | 'rabatt' | Kategori;
+type Filter = 'alle' | 'rabatt' | 'passer' | Kategori;
 
 interface VareMedPris {
   vare: Vare;
   prisinfo: Prisinfo;
+  advarsel: string | null;
 }
 
 /** Menyen til én kantine. */
@@ -29,24 +32,32 @@ export default function KantineSkjerm() {
   const kantine = hentKantine(id);
   const insets = useSafeAreaInsets();
   const { kurvKantineId, antallIKurv, totalpris, antallAvVare, leggTil } = useBestilling();
+  const { preferanser, settFavoritt } = useBruker();
   const [filter, setFilter] = useState<Filter>('alle');
 
-  // Regn ut pris én gang per vare, og skjul varer som er gått ut på dato.
+  // Regn ut pris og kostholdsadvarsel én gang per vare, og skjul utgåtte varer.
   const alleVarer = useMemo<VareMedPris[]>(
     () =>
       varerIKantine(id)
         .filter((vare) => !erUtgaatt(vare))
-        .map((vare) => ({ vare, prisinfo: beregnPris(vare) })),
-    [id],
+        .map((vare) => ({
+          vare,
+          prisinfo: beregnPris(vare),
+          advarsel: kostholdsadvarsel(vare, preferanser),
+        })),
+    [id, preferanser],
   );
 
   const antallRabatterte = alleVarer.filter((v) => v.prisinfo.grunn !== null).length;
   const kategorierIMeny = kategoriRekkefolge.filter((k) => alleVarer.some((v) => v.vare.kategori === k));
+  const visPasserFilter = harKostholdsvalg(preferanser);
+  const erFavoritt = preferanser.favorittKantineId === id;
 
   const seksjoner = useMemo(() => {
-    const filtrert = alleVarer.filter(({ vare, prisinfo }) => {
+    const filtrert = alleVarer.filter(({ vare, prisinfo, advarsel }) => {
       if (filter === 'alle') return true;
       if (filter === 'rabatt') return prisinfo.grunn !== null;
+      if (filter === 'passer') return advarsel === null;
       return vare.kategori === filter;
     });
 
@@ -98,9 +109,25 @@ export default function KantineSkjerm() {
         contentContainerStyle={[styles.liste, { paddingBottom: kurvErHer ? 110 : avstand.xl }]}
         ListHeaderComponent={
           <View style={styles.topp}>
-            <Text style={skrift.liten}>
-              {bygg?.navn} · {kantine.plassering}
-            </Text>
+            <View style={styles.toppRad}>
+              <Text style={[skrift.liten, styles.flex]}>
+                {bygg?.navn} · {kantine.plassering}
+              </Text>
+              <Pressable
+                onPress={() => settFavoritt(erFavoritt ? null : kantine.id)}
+                accessibilityRole="button"
+                accessibilityLabel={erFavoritt ? 'Fjern som favoritt' : 'Sett som favoritt'}
+                hitSlop={10}
+                style={styles.favorittKnapp}
+              >
+                <Ionicons
+                  name={erFavoritt ? 'heart' : 'heart-outline'}
+                  size={20}
+                  color={erFavoritt ? farger.tilbud : farger.tekstDempet}
+                />
+                <Text style={skrift.liten}>Favoritt</Text>
+              </Pressable>
+            </View>
             <View style={styles.merkelapper}>
               <Merkelapp
                 tekst={aapen ? `Åpent til ${kantine.stenger}` : `Stengt · åpner ${kantine.aapner}`}
@@ -115,6 +142,13 @@ export default function KantineSkjerm() {
               contentContainerStyle={styles.filtre}
             >
               <Valgbrikke tekst="Alle" valgt={filter === 'alle'} onPress={() => setFilter('alle')} />
+              {visPasserFilter && (
+                <Valgbrikke
+                  tekst="Passer for meg"
+                  valgt={filter === 'passer'}
+                  onPress={() => setFilter('passer')}
+                />
+              )}
               {antallRabatterte > 0 && (
                 <Valgbrikke
                   tekst={`Tilbud og rabatt (${antallRabatterte})`}
@@ -142,6 +176,7 @@ export default function KantineSkjerm() {
             prisinfo={item.prisinfo}
             antallIKurv={kurvKantineId === id ? antallAvVare(item.vare.id) : 0}
             onLeggTil={haandterLeggTil}
+            advarsel={item.advarsel}
           />
         )}
         ItemSeparatorComponent={() => <View style={{ height: avstand.m }} />}
@@ -179,6 +214,19 @@ const styles = StyleSheet.create({
   },
   topp: {
     gap: avstand.s,
+  },
+  toppRad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.s,
+  },
+  flex: {
+    flex: 1,
+  },
+  favorittKnapp: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.xs,
   },
   merkelapper: {
     flexDirection: 'row',

@@ -79,6 +79,22 @@ export interface Bestillingslinje {
   stykkpris: number;
 }
 
+export interface Student {
+  /** Unik ID fra Feide (eller demo-ID) */
+  id: string;
+  navn: string;
+  epost?: string;
+  institusjon?: string;
+  innloggetMed: 'feide' | 'demo';
+}
+
+export interface Preferanser {
+  /** Allergener studenten vil unngå, f.eks. ["gluten", "melk"] */
+  allergener: string[];
+  vegetar: boolean;
+  favorittKantineId: string | null;
+}
+
 export interface Bestilling {
   id: string;
   kantineId: string;
