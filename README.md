@@ -16,6 +16,13 @@ En mobilapp der studenter kan velge kantine ut fra hvilket bygg de er i, se meny
 - **Min Side** (ikon øverst til høyre): profil, mine bestillinger, allergier og kosthold, favorittkantine
 - Menyen markerer varer som ikke passer kostholdet ditt, og har filteret «Passer for meg»
 - Innlogging kreves for å bestille. Innlogging og preferanser lagres på telefonen
+- **Søk** i menyen og **ukemeny** med dagvelger (mandag–fredag) og dagens varmrett
+- **«Hvor fullt er det?»** – travelhet time for time, med tips om roligste tidspunkt
+- **Kaffekort** (10. kaffe gratis) og **matsvinn-teller** på Min side
+- **Varsel** på startsiden når favorittkantina har «Redd maten»-tilbud
+- **Bestill igjen** og **tilbakemelding** (1–5 stjerner) på tidligere bestillinger
+- **Mørk modus** og tekststørrelse følger telefonens innstillinger
+- Bestillinger lagres på enheten
 
 ## Innlogging med Feide
 
@@ -68,7 +75,6 @@ Skann QR-koden med kameraet (iPhone) eller i Expo Go (Android). Telefonen og PC-
 
 ## Videre arbeid
 
-- [ ] Lagre bestillinger på telefonen (AsyncStorage)
 - [ ] Backend/database for menyer, lager og bestillinger (f.eks. Supabase eller Firebase)
 - [ ] Ekte Feide-innlogging (se over)
 - [ ] Betaling (f.eks. Vipps)

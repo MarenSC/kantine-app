@@ -22,7 +22,7 @@ export function statustekst(steg: Bestillingssteg, erHenting: boolean): string {
 
 /**
  * Status for en bestilling.
- * Har kantina satt status i kantinevisningen, brukes den.
+ * Er status satt på bestillingen, brukes den.
  * Ellers SIMULERES status ut fra hvor lang tid som har gått.
  */
 export function hentStatus(bestilling: Bestilling, naa: Date = new Date()): Bestillingsstatus {
@@ -49,11 +49,4 @@ function simulertSteg(bestilling: Bestilling, naa: Date): Bestillingssteg {
   if (minutterSiden < 8) return 'tilberedes';
   if (minutterSiden < 12) return 'klar';
   return 'utlevert';
-}
-
-/** Neste steg i kantinevisningen, eller null når bestillingen er ferdig. */
-export function nesteSteg(steg: Bestillingssteg): Bestillingssteg | null {
-  const rekkefolge: Bestillingssteg[] = ['mottatt', 'tilberedes', 'klar', 'utlevert'];
-  const i = rekkefolge.indexOf(steg);
-  return i < rekkefolge.length - 1 ? rekkefolge[i + 1] : null;
 }

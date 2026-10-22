@@ -13,7 +13,6 @@ import {
 import { hentVare } from '../data/varer';
 import type {
   Bestilling,
-  Bestillingssteg,
   Handlekurvlinje,
   Leveringsmaate,
   Tilbakemelding,
@@ -26,7 +25,6 @@ import { beregnPris, erUtgaatt, type Prisinfo } from '../utils/pris';
  *
  * - Handlekurven kan bare inneholde varer fra ÉN kantine om gangen.
  * - Bestillingene lagres på enheten (AsyncStorage), så de huskes neste gang.
- * - Kantinevisningen bruker de samme bestillingene og kan endre status.
  */
 
 const LAGRINGSNOKKEL = 'kantina:bestillinger:v1';
@@ -174,7 +172,6 @@ interface BestillingContextVerdi {
   hentBestilling: (id: string) => Bestilling | undefined;
   /** Legger varene fra en tidligere bestilling i kurven. Returnerer hvor mange varer som fortsatt fantes. */
   bestillIgjen: (bestilling: Bestilling) => number;
-  settStatus: (id: string, status: Bestillingssteg) => void;
   giTilbakemelding: (id: string, tilbakemelding: Tilbakemelding) => void;
 }
 
@@ -289,11 +286,6 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     return linjer.length;
   }, []);
 
-  const settStatus = useCallback(
-    (id: string, status: Bestillingssteg) => dispatch({ type: 'OPPDATER_BESTILLING', id, endring: { status } }),
-    [],
-  );
-
   const giTilbakemelding = useCallback(
     (id: string, tilbakemelding: Tilbakemelding) =>
       dispatch({ type: 'OPPDATER_BESTILLING', id, endring: { tilbakemelding } }),
@@ -315,7 +307,6 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     sendBestilling,
     hentBestilling,
     bestillIgjen,
-    settStatus,
     giTilbakemelding,
   };
 

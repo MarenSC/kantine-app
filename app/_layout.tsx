@@ -57,7 +57,6 @@ export default function RootLayout() {
           <Stack.Screen name="bestillinger/index" options={{ title: 'Mine bestillinger' }} />
           <Stack.Screen name="bestillinger/[id]" options={{ title: 'Bestilling' }} />
           <Stack.Screen name="min-side" options={{ title: 'Min side', headerRight: () => null }} />
-          <Stack.Screen name="kantinevisning" options={{ title: 'Kantinevisning', headerRight: () => null }} />
         </Stack>
       </BestillingProvider>
     </BrukerProvider>

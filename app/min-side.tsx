@@ -209,19 +209,6 @@ function InnloggetVisning() {
         </Text>
       </Seksjon>
 
-      <Pressable
-        onPress={() => router.push('/kantinevisning')}
-        accessibilityRole="link"
-        style={({ pressed }) => [styles.kort, styles.ansattLenke, pressed && { opacity: 0.8 }]}
-      >
-        <Ionicons name="restaurant-outline" size={22} color={farger.primaerMork} />
-        <View style={styles.flex}>
-          <Text style={skrift.fet}>Kantinevisning</Text>
-          <Text style={skrift.liten}>For ansatte: se og behandle bestillinger</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={farger.tekstDempet} />
-      </Pressable>
-
       <Knapp tittel="Logg ut" variant="sekundaer" onPress={loggUt} />
     </ScrollView>
   );
@@ -255,10 +242,6 @@ const styles = StyleSheet.create({
     fontFamily: fonter.tittel,
     fontSize: 20,
     color: farger.suksess,
-  },
-  ansattLenke: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   skjerm: {
     flex: 1,

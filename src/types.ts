@@ -123,7 +123,7 @@ export interface Bestilling {
   opprettet: string;
   /** Kode studenten viser frem ved henting */
   hentekode: string;
-  /** Satt av kantina i kantinevisningen. Mangler = simulert status. */
+  /** Status satt av kantina (i en fremtidig versjon). Mangler = simulert status. */
   status?: Bestillingssteg;
   tilbakemelding?: Tilbakemelding;
 }
