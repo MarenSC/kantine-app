@@ -1,9 +1,10 @@
-import { router, usePathname, type Href } from 'expo-router';
+import { usePathname, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBestilling } from '../context/BestillingContext';
 import { avstand, farger, fonter, radius } from '../theme';
+import { gaaTilHovedside } from '../utils/navigasjon';
 
 const lenker: { tittel: string; href: Href; sti: string }[] = [
   { tittel: 'Hjem', href: '/', sti: '/' },
@@ -11,7 +12,7 @@ const lenker: { tittel: string; href: Href; sti: string }[] = [
   { tittel: 'Min side', href: '/min-side', sti: '/min-side' },
 ];
 
-/** Pilleformet meny nederst på startsiden. */
+/** Pilleformet meny nederst på hovedsidene (Hjem, Bestillinger, Min side). */
 export function Bunnmeny() {
   const sti = usePathname();
   const insets = useSafeAreaInsets();
@@ -29,7 +30,9 @@ export function Bunnmeny() {
           return (
             <Pressable
               key={lenke.sti}
-              onPress={() => (aktiv ? undefined : router.push(lenke.href))}
+              onPress={() => {
+                if (!aktiv) gaaTilHovedside(lenke.href, sti === '/');
+              }}
               accessibilityRole="tab"
               accessibilityState={{ selected: aktiv }}
               style={[styles.lenke, aktiv && styles.aktiv]}

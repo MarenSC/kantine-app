@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { Bunnmeny } from '../src/components/Bunnmeny';
 import { FeideLoggInnKnapp } from '../src/components/FeideLoggInnKnapp';
 import { Knapp } from '../src/components/Knapp';
 import { Merkelapp } from '../src/components/Merkelapp';
@@ -30,7 +31,12 @@ export default function MinSideSkjerm() {
     );
   }
 
-  return student ? <InnloggetVisning /> : <LoggInnVisning />;
+  return (
+    <View style={styles.skjerm}>
+      {student ? <InnloggetVisning /> : <LoggInnVisning />}
+      <Bunnmeny />
+    </View>
+  );
 }
 
 // ---------- Ikke innlogget ----------
@@ -178,6 +184,10 @@ function Seksjon({ tittel, undertekst, children }: { tittel: string; undertekst?
 }
 
 const styles = StyleSheet.create({
+  skjerm: {
+    flex: 1,
+    backgroundColor: farger.bakgrunn,
+  },
   midten: {
     flex: 1,
     alignItems: 'center',

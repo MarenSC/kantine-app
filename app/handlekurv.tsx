@@ -23,6 +23,7 @@ import { hentKantine } from '../src/data/kantiner';
 import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
 import { formaterPris } from '../src/utils/pris';
+import { gaaHjem } from '../src/utils/navigasjon';
 
 type Valg = 'henting' | 'levering';
 
@@ -50,7 +51,7 @@ export default function HandlekurvSkjerm() {
         tittel="Handlekurven er tom"
         tekst="Velg en kantine og legg til mat eller drikke."
       >
-        <Knapp tittel="Se kantiner" variant="sekundaer" onPress={() => router.dismissTo('/')} />
+        <Knapp tittel="Se kantiner" variant="sekundaer" onPress={() => gaaHjem()} />
       </TomTilstand>
     );
   }

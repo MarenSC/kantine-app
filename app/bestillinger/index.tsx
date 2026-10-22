@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Bunnmeny } from '../../src/components/Bunnmeny';
 import { Knapp } from '../../src/components/Knapp';
 import { Merkelapp } from '../../src/components/Merkelapp';
 import { TomTilstand } from '../../src/components/TomTilstand';
@@ -12,6 +13,7 @@ import { avstand, farger, radius, skrift, skygge } from '../../src/theme';
 import { klokkeslett } from '../../src/utils/dato';
 import { formaterPris } from '../../src/utils/pris';
 import { hentStatus } from '../../src/utils/status';
+import { gaaHjem } from '../../src/utils/navigasjon';
 
 /** Oversikt over bestillingene studenten har gjort. */
 export default function BestillingerSkjerm() {
@@ -20,17 +22,21 @@ export default function BestillingerSkjerm() {
 
   if (bestillinger.length === 0) {
     return (
+      <View style={styles.skjerm}>
       <TomTilstand
         ikon="receipt-outline"
         tittel="Ingen bestillinger ennå"
         tekst="Når du reserverer eller bestiller mat, dukker det opp her."
       >
-        <Knapp tittel="Se kantiner" variant="sekundaer" onPress={() => router.dismissTo('/')} />
+        <Knapp tittel="Se kantiner" variant="sekundaer" onPress={() => gaaHjem()} />
       </TomTilstand>
+      <Bunnmeny />
+      </View>
     );
   }
 
   return (
+    <View style={styles.skjerm}>
     <FlatList
       data={bestillinger}
       keyExtractor={(b) => b.id}
@@ -59,10 +65,16 @@ export default function BestillingerSkjerm() {
         );
       }}
     />
+    <Bunnmeny />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  skjerm: {
+    flex: 1,
+    backgroundColor: farger.bakgrunn,
+  },
   liste: {
     padding: avstand.l,
   },
