@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { Enhet, Vare } from '../types';
 import { dagerTil, iDag } from './dato';
 
@@ -20,8 +21,10 @@ export interface Prisinfo {
   ordinaerPris: number;
   /** Hvorfor prisen er redusert, eller null */
   grunn: Prisgrunn;
-  /** Tekst til merkelappen, f.eks. "-50 % · går ut i dag" */
+  /** Tekst til merkelappen, f.eks. "Studenttilbud" (norsk – oversettes med t() ved visning) */
   etikett?: string;
+  /** Ved datorabatt: 0 = siste salgsdag i dag, 1 = i morgen */
+  dagerIgjen?: number;
 }
 
 /**
@@ -51,7 +54,8 @@ export function beregnPris(vare: Vare, dag: Date = iDag()): Prisinfo {
           pris: rabattertPris,
           ordinaerPris: vare.pris,
           grunn: 'dato',
-          etikett: `-${prosent} % · ${dager === 0 ? 'går ut i dag' : 'går ut i morgen'}`,
+          etikett: `-${prosent} %`,
+          dagerIgjen: dager,
         };
       }
     }
@@ -72,7 +76,7 @@ export function formaterPris(kroner: number): string {
 
 /** "per stk." eller "per hg" */
 export function perEnhet(enhet: Enhet = 'stk'): string {
-  return enhet === 'hg' ? 'per hg' : 'per stk.';
+  return enhet === 'hg' ? t('per hg') : t('per stk.');
 }
 
 /** Antall med enhet: "2 ×" for stykkvarer, "400 g" for vektvarer. */

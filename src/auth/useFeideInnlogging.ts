@@ -2,6 +2,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 
+import { t } from '../i18n';
 import type { Student } from '../types';
 import { FEIDE_CONFIG } from './feide';
 
@@ -43,7 +44,7 @@ export function useFeideInnlogging(onInnlogget: (student: Student) => void) {
     if (!response) return;
 
     if (response.type !== 'success') {
-      if (response.type === 'error') setFeil('Innloggingen ble avbrutt eller feilet.');
+      if (response.type === 'error') setFeil(t('Innloggingen ble avbrutt eller feilet.'));
       setLaster(false);
       return;
     }
@@ -73,7 +74,7 @@ export function useFeideInnlogging(onInnlogget: (student: Student) => void) {
           });
         }
       } catch {
-        if (!avbrutt) setFeil('Kunne ikke fullføre innloggingen. Prøv igjen.');
+        if (!avbrutt) setFeil(t('Kunne ikke fullføre innloggingen. Prøv igjen.'));
       } finally {
         if (!avbrutt) setLaster(false);
       }

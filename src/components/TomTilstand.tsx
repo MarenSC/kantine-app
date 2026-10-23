@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps, ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { avstand, farger, radius, skrift } from '../theme';
+import { avstand, farger, lagStiler, radius, skrift } from '../theme';
 
 interface Props {
   ikon: ComponentProps<typeof Ionicons>['name'];
@@ -25,7 +25,7 @@ export function TomTilstand({ ikon, tittel, tekst, children }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   beholder: {
     flex: 1,
     alignItems: 'center',
@@ -44,4 +44,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

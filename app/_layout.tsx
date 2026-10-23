@@ -7,13 +7,14 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { ProfilKnapp } from '../src/components/ProfilKnapp';
 import { StatusVarsel } from '../src/components/StatusVarsel';
 import { BestillingProvider } from '../src/context/BestillingContext';
 import { BrukerProvider } from '../src/context/BrukerContext';
-import { MAKS_BREDDE, erMorkModus, farger, fonter } from '../src/theme';
+import { InnstillingerProvider, useInnstillinger } from '../src/context/InnstillingerContext';
+import { MAKS_BREDDE, farger, fonter, lagStiler } from '../src/theme';
 
 // Vis splash-skjermen til skriftene er lastet, så teksten ikke "hopper".
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -38,41 +39,56 @@ export default function RootLayout() {
   if (!lastet && !feil) return null;
 
   return (
-    <BrukerProvider>
-      <BestillingProvider>
-        <StatusBar style={erMorkModus ? 'light' : 'dark'} />
-        {/* På brede skjermer vises appen i en sentrert kolonne */}
-        <View style={styles.ramme}>
-          <View style={styles.app}>
-            <Stack
-              screenOptions={{
-                headerStyle: { backgroundColor: farger.bakgrunn },
-                headerTintColor: farger.tekst,
-                headerTitleStyle: { color: farger.tekst, fontFamily: fonter.tittel, fontSize: 18 },
-                headerShadowVisible: false,
-                headerBackTitle: 'Tilbake',
-                contentStyle: { backgroundColor: farger.bakgrunn },
-                // Profilikonet øverst til høyre på alle skjermer
-                headerRight: () => <ProfilKnapp />,
-              }}
-            >
-              <Stack.Screen name="index" options={{ headerShown: false, title: 'Hjem' }} />
-              <Stack.Screen name="kantine/[id]" options={{ headerShown: false, title: 'Meny' }} />
-              <Stack.Screen name="handlekurv" options={{ title: 'Handlekurv' }} />
-              <Stack.Screen name="bestillinger/index" options={{ title: 'Mine bestillinger' }} />
-              <Stack.Screen name="bestillinger/[id]" options={{ title: 'Bestilling' }} />
-              <Stack.Screen name="min-side" options={{ title: 'Min side', headerRight: () => null }} />
-            </Stack>
-            {/* Flytende status på aktiv bestilling, over alle skjermer */}
-            <StatusVarsel />
-          </View>
-        </View>
-      </BestillingProvider>
-    </BrukerProvider>
+    <InnstillingerProvider>
+      <BrukerProvider>
+        <BestillingProvider>
+          <Navigasjon />
+        </BestillingProvider>
+      </BrukerProvider>
+    </InnstillingerProvider>
   );
 }
 
-const styles = StyleSheet.create({
+/** Navigasjonen. Ligger inni InnstillingerProvider så den tegnes på nytt ved bytte av tema/språk. */
+function Navigasjon() {
+  const { erMork, t } = useInnstillinger();
+
+  return (
+    <>
+      <StatusBar style={erMork ? 'light' : 'dark'} />
+      {/* På brede skjermer vises appen i en sentrert kolonne */}
+      <View style={styles.ramme}>
+        <View style={styles.app}>
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: farger.bakgrunn },
+              headerTintColor: farger.tekst,
+              headerTitleStyle: { color: farger.tekst, fontFamily: fonter.tittel, fontSize: 18 },
+              headerShadowVisible: false,
+              headerBackTitle: t('Tilbake'),
+              contentStyle: { backgroundColor: farger.bakgrunn },
+              // Profilikonet øverst til høyre på alle skjermer
+              headerRight: () => <ProfilKnapp />,
+            }}
+          >
+            <Stack.Screen name="index" options={{ headerShown: false, title: t('Hjem') }} />
+            <Stack.Screen name="kantine/[id]" options={{ headerShown: false, title: t('Meny') }} />
+            <Stack.Screen name="handlekurv" options={{ title: t('Handlekurv') }} />
+            <Stack.Screen name="bestillinger/index" options={{ title: t('Mine bestillinger') }} />
+            <Stack.Screen name="bestillinger/tidligere" options={{ title: t('Tidligere bestillinger') }} />
+            <Stack.Screen name="bestillinger/[id]" options={{ title: t('Bestilling') }} />
+            <Stack.Screen name="min-side" options={{ title: t('Min side'), headerRight: () => null }} />
+            <Stack.Screen name="innstillinger" options={{ title: t('Innstillinger') }} />
+          </Stack>
+          {/* Flytende status på aktiv bestilling, over alle skjermer */}
+          <StatusVarsel />
+        </View>
+      </View>
+    </>
+  );
+}
+
+const styles = lagStiler(() => ({
   ramme: {
     flex: 1,
     backgroundColor: farger.ramme,
@@ -85,4 +101,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: farger.bakgrunn,
   },
-});
+}));

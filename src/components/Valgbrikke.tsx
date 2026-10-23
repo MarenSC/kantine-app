@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { avstand, farger, fonter, radius } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius } from '../theme';
 
 interface Props {
   tekst: string;
@@ -22,7 +22,7 @@ export function Valgbrikke({ tekst, valgt, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   brikke: {
     minHeight: 38,
     justifyContent: 'center',
@@ -44,4 +44,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.fet,
     color: farger.primaerMork,
   },
-});
+}));

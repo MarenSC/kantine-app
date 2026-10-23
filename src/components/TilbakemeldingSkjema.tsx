@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { avstand, farger, fonter, radius, skrift } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift } from '../theme';
+import { t } from '../i18n';
 import type { Tilbakemelding } from '../types';
 import { Knapp } from './Knapp';
 
@@ -22,7 +23,7 @@ export function TilbakemeldingSkjema({ gitt, onSend }: Props) {
   if (gitt) {
     return (
       <View style={styles.beholder}>
-        <Text style={skrift.overskrift}>Takk for tilbakemeldingen!</Text>
+        <Text style={skrift.overskrift}>{t('Takk for tilbakemeldingen!')}</Text>
         <Stjerner antall={gitt.stjerner} />
         {gitt.kommentar ? <Text style={skrift.liten}>«{gitt.kommentar}»</Text> : null}
       </View>
@@ -31,15 +32,15 @@ export function TilbakemeldingSkjema({ gitt, onSend }: Props) {
 
   return (
     <View style={styles.beholder}>
-      <Text style={skrift.overskrift}>Hvordan smakte det?</Text>
-      <View style={styles.stjerner} accessibilityRole="radiogroup" accessibilityLabel="Vurdering">
+      <Text style={skrift.overskrift}>{t('Hvordan smakte det?')}</Text>
+      <View style={styles.stjerner} accessibilityRole="radiogroup" accessibilityLabel={t('Vurdering')}>
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable
             key={n}
             onPress={() => setStjerner(n)}
             accessibilityRole="radio"
             accessibilityState={{ checked: stjerner === n }}
-            accessibilityLabel={`${n} av 5 – ${BESKRIVELSER[n]}`}
+            accessibilityLabel={`${t('{antall} av 5', { antall: n })} – ${t(BESKRIVELSER[n])}`}
             hitSlop={4}
             style={styles.stjerneKnapp}
           >
@@ -47,18 +48,18 @@ export function TilbakemeldingSkjema({ gitt, onSend }: Props) {
           </Pressable>
         ))}
       </View>
-      {stjerner > 0 ? <Text style={skrift.liten}>{BESKRIVELSER[stjerner]}</Text> : null}
+      {stjerner > 0 ? <Text style={skrift.liten}>{t(BESKRIVELSER[stjerner])}</Text> : null}
       <TextInput
         value={kommentar}
         onChangeText={setKommentar}
-        placeholder="Noe kantina bør vite? (valgfritt)"
+        placeholder={t('Noe kantina bør vite? (valgfritt)')}
         placeholderTextColor={farger.tekstDempet}
         style={styles.input}
         multiline
-        accessibilityLabel="Kommentar til kantina"
+        accessibilityLabel={t('Kommentar til kantina')}
       />
       <Knapp
-        tittel="Send tilbakemelding"
+        tittel={t('Send tilbakemelding')}
         deaktivert={stjerner === 0}
         onPress={() => onSend({ stjerner, kommentar: kommentar.trim() || undefined })}
       />
@@ -69,7 +70,7 @@ export function TilbakemeldingSkjema({ gitt, onSend }: Props) {
 /** Viser 1–5 stjerner (bare visning). */
 export function Stjerner({ antall, storrelse = 18 }: { antall: number; storrelse?: number }) {
   return (
-    <View style={styles.stjerner} accessible accessibilityLabel={`${antall} av 5 stjerner`}>
+    <View style={styles.stjerner} accessible accessibilityLabel={t('{antall} av 5 stjerner', { antall })}>
       {[1, 2, 3, 4, 5].map((n) => (
         <Ionicons key={n} name={n <= antall ? 'star' : 'star-outline'} size={storrelse} color={farger.primaer} />
       ))}
@@ -77,7 +78,7 @@ export function Stjerner({ antall, storrelse = 18 }: { antall: number; storrelse
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   beholder: {
     gap: avstand.m,
   },
@@ -103,4 +104,4 @@ const styles = StyleSheet.create({
     color: farger.tekst,
     textAlignVertical: 'top',
   },
-});
+}));

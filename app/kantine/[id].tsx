@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Merkelapp } from '../../src/components/Merkelapp';
@@ -16,10 +16,12 @@ import { VariantVelger } from '../../src/components/VariantVelger';
 import { VarmdiskVelger } from '../../src/components/VarmdiskVelger';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { useBruker } from '../../src/context/BrukerContext';
+import { useInnstillinger } from '../../src/context/InnstillingerContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
 import { varerIKantine } from '../../src/data/varer';
-import { avstand, farger, fonter, radius, skrift } from '../../src/theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift } from '../../src/theme';
 import type { Kategori, Vare } from '../../src/types';
+import { locale, t } from '../../src/i18n';
 import { datoOmDager, erAapen, nesteHverdager, tilIsoDato, ukedag } from '../../src/utils/dato';
 import { bekreft } from '../../src/utils/dialog';
 import { harKostholdsvalg, kostholdsadvarsel } from '../../src/utils/kosthold';
@@ -60,9 +62,11 @@ type Rad = { type: 'enkel'; v: VareMedPris } | { type: 'par'; a: VareMedPris; b?
 
 /** Menyen til én kantine. */
 export default function KantineSkjerm() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // fokus=redd betyr at studenten kom via «Redd maten» – da vises de varene først
+  const { id, fokus } = useLocalSearchParams<{ id: string; fokus?: string }>();
   const kantine = hentKantine(id);
   const insets = useSafeAreaInsets();
+  const { spraak } = useInnstillinger(); // tegnes på nytt når språk eller tema byttes
   const { kurvKantineId, antallIKurv, totalpris, antallAvVare, leggTil, leggTilTallerken } = useBestilling();
   const { preferanser, settFavoritt } = useBruker();
   const [filter, setFilter] = useState<Filter>('alle');
@@ -86,7 +90,8 @@ export default function KantineSkjerm() {
           prisinfo: beregnPris(vare, valgtDag),
           advarsel: kostholdsadvarsel(vare, preferanser),
         })),
-    [id, preferanser, valgtDag],
+    // spraak: advarselsteksten er oversatt, så regn ut på nytt ved bytte av språk
+    [id, preferanser, valgtDag, spraak],
   );
 
   const antallTilbud = alleVarer.filter((v) => v.prisinfo.grunn !== null).length;
@@ -97,14 +102,19 @@ export default function KantineSkjerm() {
   const seksjoner = useMemo(() => {
     const sokeord = sok.trim().toLowerCase();
     const filtrert = alleVarer.filter((v) => {
-      if (sokeord && !`${v.vare.navn} ${v.vare.beskrivelse}`.toLowerCase().includes(sokeord)) return false;
+      // Søk i både norsk og oversatt navn/beskrivelse
+      const tekst = `${v.vare.navn} ${v.vare.beskrivelse} ${t(v.vare.navn)} ${t(v.vare.beskrivelse)}`;
+      if (sokeord && !tekst.toLowerCase().includes(sokeord)) return false;
       if (filter === 'alle') return true;
       if (filter === 'passer') return v.advarsel === null;
       if (filter === 'tilbud') return v.prisinfo.grunn !== null;
       return gruppeFor(v) === filter;
     });
 
-    return grupper
+    // Kom studenten via «Redd maten», flyttes den delen øverst
+    const rekkefolge = fokus === 'redd' ? [...grupper.filter((g) => g.id === 'redd'), ...grupper.filter((g) => g.id !== 'redd')] : grupper;
+
+    return rekkefolge
       .map((g) => {
         const iGruppe = filtrert.filter((v) => gruppeFor(v) === g.id);
         const data: Rad[] = g.rutenett
@@ -114,10 +124,11 @@ export default function KantineSkjerm() {
               b: iGruppe[i * 2 + 1],
             }))
           : iGruppe.map((v) => ({ type: 'enkel' as const, v }));
-        return { tittel: g.tittel, data };
+        return { tittel: t(g.tittel), data };
       })
       .filter((s) => s.data.length > 0);
-  }, [alleVarer, filter, sok]);
+    // spraak: titlene er oversatt
+  }, [alleVarer, filter, sok, fokus, spraak]);
 
   const kurvErHer = kurvKantineId === id && antallIKurv > 0;
 
@@ -134,11 +145,11 @@ export default function KantineSkjerm() {
         leggTil(vare, variant);
         return;
       }
-      const navn = hentKantine(kurvKantineId)?.navn ?? 'en annen kantine';
+      const navn = hentKantine(kurvKantineId)?.navn ?? t('en annen kantine');
       bekreft(
-        'Starte ny handlekurv?',
-        `Du har varer fra ${navn} i handlekurven. Du kan bare bestille fra én kantine om gangen.`,
-        'Tøm og legg til',
+        t('Starte ny handlekurv?'),
+        t('Du har varer fra {kantine} i handlekurven. Du kan bare bestille fra én kantine om gangen.', { kantine: navn }),
+        t('Tøm og legg til'),
         () => leggTil(vare, variant),
       );
     },
@@ -159,7 +170,7 @@ export default function KantineSkjerm() {
   );
 
   if (!kantine) {
-    return <TomTilstand ikon="alert-circle-outline" tittel="Fant ikke kantina" />;
+    return <TomTilstand ikon="alert-circle-outline" tittel={t('Fant ikke kantina')} />;
   }
 
   const bygg = hentBygg(kantine.byggId);
@@ -188,7 +199,7 @@ export default function KantineSkjerm() {
               <Pressable
                 onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
                 accessibilityRole="button"
-                accessibilityLabel="Tilbake"
+                accessibilityLabel={t('Tilbake')}
                 style={styles.rundKnapp}
               >
                 <Ionicons name="chevron-back" size={22} color={farger.tekst} />
@@ -196,7 +207,7 @@ export default function KantineSkjerm() {
               <Pressable
                 onPress={() => settFavoritt(erFavoritt ? null : kantine.id)}
                 accessibilityRole="button"
-                accessibilityLabel={erFavoritt ? 'Fjern som favoritt' : 'Sett som favoritt'}
+                accessibilityLabel={erFavoritt ? t('Fjern som favoritt') : t('Sett som favoritt')}
                 style={styles.rundKnapp}
               >
                 <Ionicons
@@ -211,12 +222,12 @@ export default function KantineSkjerm() {
               <Text style={skrift.stor}>{kantine.navn}</Text>
               <View style={styles.infoRad}>
                 <Merkelapp
-                  tekst={aapen ? `Åpent til ${kantine.stenger}` : `Stengt · åpner ${kantine.aapner}`}
+                  tekst={aapen ? t('Åpent til {tid}', { tid: kantine.stenger }) : t('Stengt · åpner {tid}', { tid: kantine.aapner })}
                   variant={aapen ? 'suksess' : 'info'}
                 />
                 <Text style={skrift.liten}>
-                  {bygg?.kortnavn} · {kantine.plassering}
-                  {kantine.leveringTilBord ? ' · levering til bord' : ''}
+                  {bygg?.kortnavn} · {t(kantine.plassering)}
+                  {kantine.leveringTilBord ? ` · ${t('levering til bord')}` : ''}
                 </Text>
               </View>
               <SioMerke />
@@ -232,14 +243,14 @@ export default function KantineSkjerm() {
                 <TextInput
                   value={sok}
                   onChangeText={setSok}
-                  placeholder="Søk i menyen"
+                  placeholder={t('Søk i menyen')}
                   placeholderTextColor={farger.tekstDempet}
                   style={styles.sokFelt}
                   returnKeyType="search"
-                  accessibilityLabel="Søk i menyen"
+                  accessibilityLabel={t('Søk i menyen')}
                 />
                 {sok ? (
-                  <Pressable onPress={() => setSok('')} accessibilityRole="button" accessibilityLabel="Tøm søket" hitSlop={10}>
+                  <Pressable onPress={() => setSok('')} accessibilityRole="button" accessibilityLabel={t('Tøm søket')} hitSlop={10}>
                     <Ionicons name="close-circle" size={18} color={farger.tekstDempet} />
                   </Pressable>
                 ) : null}
@@ -255,10 +266,10 @@ export default function KantineSkjerm() {
                   const iso = tilIsoDato(d);
                   const navn =
                     iso === datoOmDager(0)
-                      ? 'I dag'
+                      ? t('I dag')
                       : iso === datoOmDager(1)
-                        ? 'I morgen'
-                        : `${['', 'Man', 'Tir', 'Ons', 'Tor', 'Fre'][ukedag(d)]} ${d.getDate()}.`;
+                        ? t('I morgen')
+                        : kortUkedag(d);
                   return (
                     <Valgbrikke key={iso} tekst={navn} valgt={iso === valgtDagIso} onPress={() => setValgtDagIso(iso)} />
                   );
@@ -269,7 +280,7 @@ export default function KantineSkjerm() {
                 <View style={styles.forhandsvisning}>
                   <Ionicons name="calendar-outline" size={18} color={farger.dato} />
                   <Text style={styles.forhandsvisningTekst}>
-                    Forhåndsvisning av menyen. Mat kan bestilles samme dag.
+                    {t('Forhåndsvisning av menyen. Mat kan bestilles samme dag.')}
                   </Text>
                 </View>
               ) : null}
@@ -280,13 +291,13 @@ export default function KantineSkjerm() {
                 contentContainerStyle={styles.filtre}
                 style={styles.filterRad}
               >
-                <Valgbrikke tekst="Alle" valgt={filter === 'alle'} onPress={() => setFilter('alle')} />
+                <Valgbrikke tekst={t('Alle')} valgt={filter === 'alle'} onPress={() => setFilter('alle')} />
                 {visPasserFilter && (
-                  <Valgbrikke tekst="Passer for meg" valgt={filter === 'passer'} onPress={() => setFilter('passer')} />
+                  <Valgbrikke tekst={t('Passer for meg')} valgt={filter === 'passer'} onPress={() => setFilter('passer')} />
                 )}
                 {antallTilbud > 0 && (
                   <Valgbrikke
-                    tekst={`Tilbud (${antallTilbud})`}
+                    tekst={`${t('Tilbud')} (${antallTilbud})`}
                     valgt={filter === 'tilbud'}
                     onPress={() => setFilter('tilbud')}
                   />
@@ -294,7 +305,7 @@ export default function KantineSkjerm() {
                 {grupperIMeny
                   .filter((g) => g.id !== 'redd')
                   .map((g) => (
-                    <Valgbrikke key={g.id} tekst={g.tittel} valgt={filter === g.id} onPress={() => setFilter(g.id)} />
+                    <Valgbrikke key={g.id} tekst={t(g.tittel)} valgt={filter === g.id} onPress={() => setFilter(g.id)} />
                   ))}
               </ScrollView>
             </View>
@@ -317,7 +328,7 @@ export default function KantineSkjerm() {
         ListEmptyComponent={
           <TomTilstand
             ikon={sok ? 'search-outline' : 'restaurant-outline'}
-            tittel={sok ? `Ingen treff på «${sok}»` : 'Ingen varer her akkurat nå'}
+            tittel={sok ? t('Ingen treff på «{sok}»', { sok }) : t('Ingen varer her akkurat nå')}
           />
         }
       />
@@ -335,9 +346,9 @@ export default function KantineSkjerm() {
             return;
           }
           bekreft(
-            'Starte ny handlekurv?',
-            'Du har varer fra en annen kantine i handlekurven. Du kan bare bestille fra én kantine om gangen.',
-            'Tøm og legg til',
+            t('Starte ny handlekurv?'),
+            t('Du har varer fra en annen kantine i handlekurven. Du kan bare bestille fra én kantine om gangen.'),
+            t('Tøm og legg til'),
             () => leggTilTallerken(vare, komponenter),
           );
         }}
@@ -362,7 +373,7 @@ export default function KantineSkjerm() {
             <View style={styles.kurvAntall}>
               <Text style={styles.kurvAntallTekst}>{antallIKurv}</Text>
             </View>
-            <Text style={styles.kurvTekst}>Gå til handlekurv</Text>
+            <Text style={styles.kurvTekst}>{t('Gå til handlekurv')}</Text>
             <Text style={styles.kurvPris}>{formaterPris(totalpris)}</Text>
           </Pressable>
         </View>
@@ -371,7 +382,13 @@ export default function KantineSkjerm() {
   );
 }
 
-const styles = StyleSheet.create({
+/** "Man. 27." / "Mon 27" – kort ukedag og dato på valgt språk. */
+function kortUkedag(dato: Date): string {
+  const tekst = new Intl.DateTimeFormat(locale(), { weekday: 'short', day: 'numeric' }).format(dato);
+  return tekst.charAt(0).toUpperCase() + tekst.slice(1);
+}
+
+const styles = lagStiler(() => ({
   skjerm: {
     flex: 1,
     backgroundColor: farger.bakgrunn,
@@ -515,4 +532,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.tittel,
     fontSize: 17,
   },
-});
+}));

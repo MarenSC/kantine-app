@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { STEMPLER_FOR_GRATIS } from '../context/BestillingContext';
-import { avstand, farger, fonter, radius, skrift } from '../theme';
+import { t } from '../i18n';
+import { avstand, farger, fonter, lagStiler, radius, skrift } from '../theme';
 
 /**
  * Kaffekort: hver kaffe gir ett stempel. Den tiende er gratis.
@@ -19,12 +20,12 @@ export function Stempelkort({ stempler }: { stempler: number }) {
     <View
       style={styles.kort}
       accessible
-      accessibilityLabel={`Kaffekort: ${fylte} av ${STEMPLER_FOR_GRATIS} stempler. ${
-        fullt ? 'Neste kaffe er gratis.' : `${igjen} igjen til gratis kaffe.`
+      accessibilityLabel={`${t('Kaffekort: {fylte} av {totalt} stempler.', { fylte, totalt: STEMPLER_FOR_GRATIS })} ${
+        fullt ? t('Neste kaffe er gratis.') : t('{antall} igjen til gratis kaffe.', { antall: igjen })
       }`}
     >
       <View style={styles.topp}>
-        <Text style={skrift.overskrift}>Kaffekort</Text>
+        <Text style={skrift.overskrift}>{t('Kaffekort')}</Text>
         <Text style={styles.teller}>
           {fylte}/{STEMPLER_FOR_GRATIS}
         </Text>
@@ -39,7 +40,7 @@ export function Stempelkort({ stempler }: { stempler: number }) {
               {fylt ? (
                 <Ionicons name="cafe" size={16} color={farger.hvit} />
               ) : sisteGratis ? (
-                <Text style={styles.gratisTekst}>Gratis</Text>
+                <Text style={styles.gratisTekst}>{t('Gratis')}</Text>
               ) : null}
             </View>
           );
@@ -48,14 +49,14 @@ export function Stempelkort({ stempler }: { stempler: number }) {
 
       <Text style={fullt ? styles.fulltTekst : skrift.liten}>
         {fullt
-          ? 'Neste kaffe er gratis! Vis kortet i kassa.'
-          : `${igjen} ${igjen === 1 ? 'kaffe' : 'kaffer'} til, så er den neste gratis.`}
+          ? t('Neste kaffe er gratis! Vis kortet i kassa.')
+          : t(igjen === 1 ? '{antall} kaffe til, så er den neste gratis.' : '{antall} kaffer til, så er den neste gratis.', { antall: igjen })}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   kort: {
     gap: avstand.m,
   },
@@ -104,4 +105,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: farger.suksess,
   },
-});
+}));

@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useBruker } from '../context/BrukerContext';
-import { avstand, farger, fonter, radius } from '../theme';
+import { useInnstillinger } from '../context/InnstillingerContext';
+import { avstand, farger, fonter, lagStiler, radius } from '../theme';
 
 /** "Tom Nordmann" -> "TN" */
 export function initialer(navn: string): string {
@@ -17,13 +18,14 @@ export function initialer(navn: string): string {
 
 /** Ikonet øverst til høyre som åpner Min Side. */
 export function ProfilKnapp() {
+  const { t } = useInnstillinger();
   const { student } = useBruker();
 
   return (
     <Pressable
       onPress={() => router.push('/min-side')}
       accessibilityRole="button"
-      accessibilityLabel="Min side"
+      accessibilityLabel={t('Min side')}
       hitSlop={10}
       style={styles.knapp}
     >
@@ -38,7 +40,7 @@ export function ProfilKnapp() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   knapp: {
     padding: avstand.xs,
   },
@@ -55,4 +57,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonter.fet,
   },
-});
+}));

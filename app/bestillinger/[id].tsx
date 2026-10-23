@@ -4,12 +4,15 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Knapp } from '../../src/components/Knapp';
 import { Merkelapp } from '../../src/components/Merkelapp';
+import { SveipBekreft } from '../../src/components/SveipBekreft';
 import { TilbakemeldingSkjema } from '../../src/components/TilbakemeldingSkjema';
 import { TomTilstand } from '../../src/components/TomTilstand';
 import { useBestilling } from '../../src/context/BestillingContext';
+import { useInnstillinger } from '../../src/context/InnstillingerContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
 import { useNaa } from '../../src/hooks/useNaa';
-import { avstand, farger, fonter, radius, skrift, skygge } from '../../src/theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift, skygge } from '../../src/theme';
+import { t } from '../../src/i18n';
 import { klokkeslett } from '../../src/utils/dato';
 import { formaterAntall, formaterPris } from '../../src/utils/pris';
 import { hentStatus } from '../../src/utils/status';
@@ -19,12 +22,13 @@ import { gaaHjem } from '../../src/utils/navigasjon';
 /** Kvittering og status for én bestilling. */
 export default function BestillingSkjerm() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { hentBestilling, bestillIgjen, giTilbakemelding, kurvKantineId, antallIKurv } = useBestilling();
+  useInnstillinger(); // tegnes på nytt når språk eller tema byttes
+  const { hentBestilling, bestillIgjen, giTilbakemelding, bekreftUtlevert, kurvKantineId, antallIKurv } = useBestilling();
   const naa = useNaa();
   const bestilling = hentBestilling(id);
 
   if (!bestilling) {
-    return <TomTilstand ikon="alert-circle-outline" tittel="Fant ikke bestillingen" />;
+    return <TomTilstand ikon="alert-circle-outline" tittel={t('Fant ikke bestillingen')} />;
   }
 
   const kantine = hentKantine(bestilling.kantineId);
@@ -32,20 +36,22 @@ export default function BestillingSkjerm() {
   const status = hentStatus(bestilling, naa);
   const { leveringsmaate } = bestilling;
   const erHenting = leveringsmaate.type === 'henting';
+  const erKlar = status.steg === 'klar';
+  const erUtlevert = status.steg === 'utlevert';
 
   function haandterBestillIgjen() {
     if (!bestilling) return;
     const utfor = () => {
       const antall = bestillIgjen(bestilling);
       if (antall === 0) {
-        visMelding('Ikke tilgjengelig', 'Ingen av varene fra denne bestillingen finnes på menyen nå.');
+        visMelding(t('Ikke tilgjengelig'), t('Ingen av varene fra denne bestillingen finnes på menyen nå.'));
         return;
       }
       router.push('/handlekurv');
     };
     // Advar hvis handlekurven allerede har andre varer
     if (antallIKurv > 0 && kurvKantineId !== null) {
-      bekreft('Erstatte handlekurven?', 'Varene du har i handlekurven nå, blir byttet ut.', 'Bestill igjen', utfor);
+      bekreft(t('Erstatte handlekurven?'), t('Varene du har i handlekurven nå, blir byttet ut.'), t('Bestill igjen'), utfor);
     } else {
       utfor();
     }
@@ -54,31 +60,67 @@ export default function BestillingSkjerm() {
   return (
     <ScrollView contentContainerStyle={styles.innhold}>
       <View style={styles.hode}>
-        <View style={styles.hake}>
-          <Ionicons name="checkmark" size={36} color={farger.hvit} />
+        <View style={[styles.hake, erUtlevert && styles.hakeUtlevert]}>
+          <Ionicons name={erUtlevert ? 'checkmark-done' : 'checkmark'} size={36} color={farger.hvit} />
         </View>
-        <Text style={skrift.tittel}>
-          {erHenting ? 'Maten er reservert!' : 'Bestillingen er sendt!'}
+        <Text style={[skrift.tittel, styles.midtstilt]}>
+          {erUtlevert
+            ? t('Velbekomme!')
+            : erKlar
+              ? erHenting
+                ? t('Maten er klar!')
+                : t('Maten er på vei!')
+              : erHenting
+                ? t('Maten er reservert!')
+                : t('Bestillingen er sendt!')}
         </Text>
         <Merkelapp tekst={status.tekst} variant={status.ferdig ? 'suksess' : 'info'} />
+        {erUtlevert && bestilling.utlevertTid ? (
+          <Text style={skrift.liten}>
+            {t(erHenting ? 'Hentet kl. {tid}' : 'Levert kl. {tid}', { tid: klokkeslett(new Date(bestilling.utlevertTid)) })}
+          </Text>
+        ) : null}
       </View>
 
-      <View style={[styles.kort, styles.kodeKort]}>
-        <Text style={skrift.liten}>{erHenting ? 'Vis denne koden i kassa' : 'Bestillingsnummer'}</Text>
-        <Text style={styles.kode} accessibilityLabel={`Kode ${bestilling.hentekode}`}>
-          #{bestilling.hentekode}
-        </Text>
-      </View>
+      {/* Etter henting: be om tilbakemelding øverst, mens måltidet er ferskt i minnet */}
+      {erUtlevert ? (
+        <View style={styles.kort}>
+          <TilbakemeldingSkjema
+            gitt={bestilling.tilbakemelding}
+            onSend={(svar) => giTilbakemelding(bestilling.id, svar)}
+          />
+        </View>
+      ) : (
+        <View style={[styles.kort, styles.kodeKort, erKlar && styles.kodeKortKlar]}>
+          <Text style={skrift.liten}>{erHenting ? t('Vis denne koden i kassa') : t('Bestillingsnummer')}</Text>
+          <Text style={styles.kode} accessibilityLabel={t('Kode {kode}', { kode: bestilling.hentekode })}>
+            #{bestilling.hentekode}
+          </Text>
+          {erKlar ? (
+            <View style={styles.sveip}>
+              <SveipBekreft
+                tekst={erHenting ? t('Sveip når du har fått maten') : t('Sveip når maten er levert')}
+                onBekreft={() => bekreftUtlevert(bestilling.id)}
+              />
+              <Text style={[skrift.liten, styles.midtstilt]}>
+                {erHenting
+                  ? t('Gjør dette i kassa, så ansatte ser at bestillingen er hentet.')
+                  : t('Bekreft når du har fått maten, så arkiveres bestillingen.')}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       <View style={styles.kort}>
         <Rad
           ikon="restaurant-outline"
-          tekst={`${kantine?.navn ?? 'Kantine'}${bygg ? ` · ${bygg.navn}` : ''}`}
+          tekst={`${kantine?.navn ?? t('Kantine')}${bygg ? ` · ${bygg.navn}` : ''}`}
         />
         {leveringsmaate.type === 'henting' ? (
-          <Rad ikon="time-outline" tekst={`Hentes ca. kl. ${klokkeslett(new Date(leveringsmaate.hentetid))}`} />
+          <Rad ikon="time-outline" tekst={t('Hentes ca. kl. {tid}', { tid: klokkeslett(new Date(leveringsmaate.hentetid)) })} />
         ) : (
-          <Rad ikon="location-outline" tekst={`Leveres til: ${leveringsmaate.plassering}`} />
+          <Rad ikon="location-outline" tekst={t('Leveres til: {sted}', { sted: leveringsmaate.plassering })} />
         )}
         {bestilling.kommentar ? <Rad ikon="chatbubble-outline" tekst={bestilling.kommentar} /> : null}
       </View>
@@ -87,29 +129,21 @@ export default function BestillingSkjerm() {
         {bestilling.linjer.map((linje, i) => (
           <View key={`${linje.vareId}-${linje.variant ?? ""}-${i}`} style={styles.linje}>
             <Text style={[skrift.brodtekst, styles.linjeNavn]}>
-              {formaterAntall(linje.antall, linje.enhet)} {linje.navn}
-              {linje.komponenter ? `\n${linje.komponenter.map((k) => `${k.navn} ${k.gram} g`).join(' · ')}` : ''}
+              {formaterAntall(linje.antall, linje.enhet)} {t(linje.navn)}
+              {linje.variant ? ` (${t(linje.variant)})` : ''}
+              {linje.komponenter ? `\n${linje.komponenter.map((k) => `${t(k.navn)} ${k.gram} g`).join(' · ')}` : ''}
             </Text>
             <Text style={skrift.brodtekst}>{formaterPris(linje.antall * linje.stykkpris)}</Text>
           </View>
         ))}
         <View style={[styles.linje, styles.total]}>
-          <Text style={skrift.overskrift}>Totalt</Text>
+          <Text style={skrift.overskrift}>{t('Totalt')}</Text>
           <Text style={skrift.overskrift}>{formaterPris(bestilling.totalpris)}</Text>
         </View>
       </View>
 
-      {status.ferdig ? (
-        <View style={styles.kort}>
-          <TilbakemeldingSkjema
-            gitt={bestilling.tilbakemelding}
-            onSend={(t) => giTilbakemelding(bestilling.id, t)}
-          />
-        </View>
-      ) : null}
-
-      <Knapp tittel="Bestill det samme igjen" onPress={haandterBestillIgjen} />
-      <Knapp tittel="Tilbake til kantinene" variant="sekundaer" onPress={() => gaaHjem()} />
+      <Knapp tittel={t('Bestill det samme igjen')} onPress={haandterBestillIgjen} />
+      <Knapp tittel={t('Tilbake til kantinene')} variant="sekundaer" onPress={() => gaaHjem()} />
     </ScrollView>
   );
 }
@@ -125,7 +159,7 @@ function Rad({ ikon, tekst }: { ikon: IkonNavn; tekst: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   innhold: {
     padding: avstand.l,
     gap: avstand.l,
@@ -154,6 +188,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: avstand.xs,
   },
+  kodeKortKlar: {
+    borderWidth: 2,
+    borderColor: farger.suksess,
+  },
+  sveip: {
+    alignSelf: 'stretch',
+    gap: avstand.s,
+    marginTop: avstand.m,
+  },
+  midtstilt: {
+    textAlign: 'center',
+  },
+  hakeUtlevert: {
+    backgroundColor: farger.suksess,
+  },
   kode: {
     fontSize: 40,
     fontFamily: fonter.tittel,
@@ -181,4 +230,4 @@ const styles = StyleSheet.create({
     borderTopColor: farger.kant,
     paddingTop: avstand.m,
   },
-});
+}));

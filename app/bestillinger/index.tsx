@@ -1,94 +1,104 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
+import { BestillingRad } from '../../src/components/BestillingRad';
 import { Bunnmeny } from '../../src/components/Bunnmeny';
 import { Knapp } from '../../src/components/Knapp';
-import { Merkelapp } from '../../src/components/Merkelapp';
 import { TomTilstand } from '../../src/components/TomTilstand';
 import { useBestilling } from '../../src/context/BestillingContext';
-import { hentKantine } from '../../src/data/kantiner';
+import { useInnstillinger } from '../../src/context/InnstillingerContext';
 import { useNaa } from '../../src/hooks/useNaa';
-import { avstand, farger, radius, skrift, skygge } from '../../src/theme';
-import { klokkeslett } from '../../src/utils/dato';
-import { formaterPris } from '../../src/utils/pris';
-import { hentStatus } from '../../src/utils/status';
+import { t } from '../../src/i18n';
+import { avstand, farger, lagStiler, radius, skrift } from '../../src/theme';
 import { gaaHjem } from '../../src/utils/navigasjon';
+import { hentStatus } from '../../src/utils/status';
 
-/** Oversikt over bestillingene studenten har gjort. */
+/** Aktive bestillinger. Tidligere (hentet/levert) ligger bak en egen knapp. */
 export default function BestillingerSkjerm() {
+  useInnstillinger(); // tegnes på nytt når språk eller tema byttes
   const { bestillinger } = useBestilling();
   const naa = useNaa();
 
-  if (bestillinger.length === 0) {
-    return (
-      <View style={styles.skjerm}>
-        <TomTilstand
-          ikon="receipt-outline"
-          tittel="Ingen bestillinger ennå"
-          tekst="Når du reserverer eller bestiller mat, dukker det opp her."
-        >
-          <Knapp tittel="Se kantiner" variant="sekundaer" onPress={() => gaaHjem()} />
-        </TomTilstand>
-        <Bunnmeny />
-      </View>
-    );
-  }
+  const medStatus = bestillinger.map((b) => ({ bestilling: b, status: hentStatus(b, naa) }));
+  const aktive = medStatus.filter((x) => x.status.steg !== 'utlevert');
+  const antallTidligere = medStatus.length - aktive.length;
+
+  const tidligereKnapp =
+    antallTidligere > 0 ? (
+      <Pressable
+        onPress={() => router.push('/bestillinger/tidligere')}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.tidligere, pressed && { opacity: 0.85 }]}
+      >
+        <Ionicons name="time-outline" size={22} color={farger.primaerMork} />
+        <View style={styles.flex}>
+          <Text style={skrift.fet}>{t('Tidligere bestillinger')}</Text>
+          <Text style={skrift.liten}>
+            {t(antallTidligere === 1 ? '{antall} bestilling med kvittering' : '{antall} bestillinger med kvittering', { antall: antallTidligere })}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={farger.primaerMork} />
+      </Pressable>
+    ) : null;
 
   return (
     <View style={styles.skjerm}>
-      <FlatList
-        data={bestillinger}
-        keyExtractor={(b) => b.id}
-        contentContainerStyle={styles.liste}
-        ItemSeparatorComponent={() => <View style={{ height: avstand.m }} />}
-        renderItem={({ item }) => {
-          const status = hentStatus(item, naa);
-          const antallVarer = item.linjer.reduce((sum, l) => sum + l.antall, 0);
-
-          return (
-            <Pressable
-              onPress={() => router.push({ pathname: '/bestillinger/[id]', params: { id: item.id } })}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.kort, pressed && { opacity: 0.85 }]}
-            >
-              <View style={styles.tekst}>
-                <Text style={skrift.overskrift}>{hentKantine(item.kantineId)?.navn ?? 'Kantine'}</Text>
-                <Text style={skrift.liten}>
-                  Bestilt {klokkeslett(new Date(item.opprettet))} · {antallVarer}{' '}
-                  {antallVarer === 1 ? 'vare' : 'varer'} · {formaterPris(item.totalpris)}
-                </Text>
-                <Merkelapp tekst={status.tekst} variant={status.ferdig ? 'suksess' : 'info'} />
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={farger.tekstDempet} />
-            </Pressable>
-          );
-        }}
-      />
+      {aktive.length === 0 ? (
+        <View style={styles.flex}>
+          <TomTilstand
+            ikon="receipt-outline"
+            tittel={t('Ingen aktive bestillinger')}
+            tekst={t('Når du reserverer eller bestiller mat, ser du statusen her.')}
+          >
+            <Knapp tittel={t('Se kantiner')} variant="sekundaer" onPress={() => gaaHjem()} />
+          </TomTilstand>
+          {tidligereKnapp ? <View style={styles.tidligereBunn}>{tidligereKnapp}</View> : null}
+        </View>
+      ) : (
+        <FlatList
+          data={aktive}
+          keyExtractor={(x) => x.bestilling.id}
+          contentContainerStyle={styles.liste}
+          ListHeaderComponent={<Text style={styles.overskrift}>{t('Aktive')} ({aktive.length})</Text>}
+          ItemSeparatorComponent={() => <View style={{ height: avstand.m }} />}
+          renderItem={({ item }) => <BestillingRad bestilling={item.bestilling} status={item.status} />}
+          ListFooterComponent={tidligereKnapp ? <View style={styles.tidligereListe}>{tidligereKnapp}</View> : undefined}
+        />
+      )}
       <Bunnmeny />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   skjerm: {
     flex: 1,
     backgroundColor: farger.bakgrunn,
   },
+  flex: {
+    flex: 1,
+    gap: 2,
+  },
   liste: {
     padding: avstand.l,
   },
-  kort: {
+  overskrift: {
+    ...skrift.etikett,
+    marginBottom: avstand.m,
+  },
+  tidligere: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: avstand.m,
     padding: avstand.l,
-    backgroundColor: farger.kort,
     borderRadius: radius.l,
-    ...skygge,
+    backgroundColor: farger.primaerLys,
   },
-  tekst: {
-    flex: 1,
-    gap: avstand.xs,
+  tidligereListe: {
+    marginTop: avstand.xl,
   },
-});
+  tidligereBunn: {
+    padding: avstand.l,
+  },
+}));

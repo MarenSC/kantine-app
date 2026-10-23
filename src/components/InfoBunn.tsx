@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
 
 import { hentBygg, kantiner } from '../data/kantiner';
 import { useNaa } from '../hooks/useNaa';
-import { avstand, farger, fonter, radius, skrift } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift } from '../theme';
+import { t } from '../i18n';
 import { erAapen } from '../utils/dato';
 import { SioMerke } from './SioMerke';
 
@@ -20,12 +21,12 @@ export function InfoBunn() {
     <View style={styles.beholder}>
       <View style={styles.skille} />
 
-      <Text style={skrift.etikett}>Åpningstider i dag</Text>
+      <Text style={skrift.etikett}>{t('Åpningstider i dag')}</Text>
       <View style={styles.liste}>
         {kantiner.map((k) => {
           const aapen = erAapen(k.aapner, k.stenger, naa);
           return (
-            <View key={k.id} style={styles.rad} accessible accessibilityLabel={`${k.navn}, ${k.aapner} til ${k.stenger}, ${aapen ? 'åpent nå' : 'stengt nå'}`}>
+            <View key={k.id} style={styles.rad} accessible accessibilityLabel={`${k.navn}, ${k.aapner}–${k.stenger}, ${aapen ? t('åpent nå') : t('stengt nå')}`}>
               <View style={[styles.prikk, { backgroundColor: aapen ? farger.suksess : farger.deaktivert }]} />
               <Text style={[skrift.brodtekst, styles.flex]} numberOfLines={1}>
                 {k.navn}
@@ -42,8 +43,8 @@ export function InfoBunn() {
       <View style={styles.kontakt}>
         <Ionicons name="chatbubbles-outline" size={20} color={farger.primaerMork} />
         <View style={styles.flex}>
-          <Text style={skrift.fet}>Spørsmål om allergener eller maten?</Text>
-          <Text style={skrift.liten}>Spør i kassa, eller kontakt SiO Mat og drikke.</Text>
+          <Text style={skrift.fet}>{t('Spørsmål om allergener eller maten?')}</Text>
+          <Text style={skrift.liten}>{t('Spør i kassa, eller kontakt SiO Mat og drikke.')}</Text>
           <Pressable
             onPress={() => Linking.openURL(SIO_URL)}
             accessibilityRole="link"
@@ -58,13 +59,13 @@ export function InfoBunn() {
 
       <View style={styles.avsender}>
         <SioMerke midtstilt />
-        <Text style={[skrift.liten, styles.midtstilt]}>Studentprototype – OsloMet 2026</Text>
+        <Text style={[skrift.liten, styles.midtstilt]}>{t('Studentprototype – OsloMet 2026')}</Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   beholder: {
     gap: avstand.m,
     marginTop: avstand.s,
@@ -125,4 +126,4 @@ const styles = StyleSheet.create({
   midtstilt: {
     textAlign: 'center',
   },
-});
+}));

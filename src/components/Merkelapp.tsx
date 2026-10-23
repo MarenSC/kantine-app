@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { farger, fonter, radius } from '../theme';
+import { farger, fonter, lagStiler, lagTemaverdi, radius } from '../theme';
 
 /**
  * tilbud = sand/terrakotta, dato = rav (datorabatt, allergier),
@@ -8,13 +8,13 @@ import { farger, fonter, radius } from '../theme';
  */
 type Variant = 'tilbud' | 'dato' | 'info' | 'suksess' | 'mork';
 
-const fargevalg: Record<Variant, { bakgrunn: string; tekst: string }> = {
+const fargevalg: Record<Variant, { bakgrunn: string; tekst: string }> = lagTemaverdi(() => ({
   tilbud: { bakgrunn: farger.primaerLys, tekst: farger.primaerMork },
   dato: { bakgrunn: farger.datoLys, tekst: farger.dato },
   info: { bakgrunn: farger.primaerLys, tekst: farger.primaerMork },
   suksess: { bakgrunn: farger.suksessLys, tekst: farger.suksess },
   mork: { bakgrunn: farger.morkFlate, tekst: farger.hvit },
-};
+}));
 
 interface Props {
   tekst: string;
@@ -31,7 +31,7 @@ export function Merkelapp({ tekst, variant = 'info' }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   lapp: {
     alignSelf: 'flex-start',
     paddingHorizontal: 9,
@@ -42,4 +42,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.fet,
     fontSize: 12,
   },
-});
+}));

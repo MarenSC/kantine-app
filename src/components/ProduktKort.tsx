@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { avstand, farger, fonter, radius, skygge } from '../theme';
+import { useInnstillinger } from '../context/InnstillingerContext';
+import { avstand, farger, fonter, lagStiler, radius, skygge } from '../theme';
 import { LeggTilKnapp } from './LeggTilKnapp';
 import { Merkelapp } from './Merkelapp';
 import { Pris } from './Pris';
@@ -10,22 +11,23 @@ import { lagerstatus, type VareKortProps } from './VareKort';
 
 /** Kompakt kort for drikke og snacks, vist to og to i et rutenett. */
 function ProduktKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, kanBestilles = true }: VareKortProps) {
+  const { t } = useInnstillinger(); // memo-komponent: må lytte selv for å bytte språk/tema
   const { utsolgt, kanLeggeTil } = lagerstatus(vare, antallIKurv);
 
   return (
     <View style={[styles.kort, utsolgt && styles.utsolgt]}>
       <VareBilde bilde={vare.bilde} tilpasning="contain" style={styles.bilde} />
       <Text style={styles.navn} numberOfLines={2}>
-        {vare.navn}
+        {t(vare.navn)}
       </Text>
       <Text style={styles.beskrivelse} numberOfLines={1}>
-        {vare.beskrivelse}
+        {t(vare.beskrivelse)}
       </Text>
       {advarsel ? <Merkelapp tekst={advarsel} variant="dato" /> : null}
       <View style={styles.bunn}>
         <Pris prisinfo={prisinfo} enhet={vare.enhet} />
         <LeggTilKnapp
-          navn={vare.navn}
+          navn={t(vare.navn)}
           antallIKurv={antallIKurv}
           aktiv={kanLeggeTil && kanBestilles}
           onPress={() => onLeggTil(vare)}
@@ -37,7 +39,7 @@ function ProduktKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel
 
 export const ProduktKort = memo(ProduktKortKomponent);
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   kort: {
     flex: 1,
     gap: avstand.xs + 2,
@@ -68,4 +70,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-});
+}));

@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { avstand, farger, fonter, radius, skygge } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius, skygge } from '../theme';
+import { useInnstillinger } from '../context/InnstillingerContext';
 import type { Vare } from '../types';
 import { formaterAntall, type Prisinfo } from '../utils/pris';
 import { LeggTilKnapp } from './LeggTilKnapp';
@@ -32,14 +33,15 @@ export function lagerstatus(vare: Vare, antallIKurv: number) {
 
 /** Én rett på menyen: bilde til venstre, tekst i midten, "+" til høyre. */
 function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, kanBestilles = true }: VareKortProps) {
+  const { t } = useInnstillinger(); // memo-komponent: må lytte selv for å bytte språk/tema
   const { utsolgt, kanLeggeTil, faaIgjen } = lagerstatus(vare, antallIKurv);
   const rabattProsent =
     prisinfo.grunn === 'dato' ? Math.round((1 - prisinfo.pris / prisinfo.ordinaerPris) * 100) : null;
   const datoTekst =
     prisinfo.grunn === 'dato'
-      ? prisinfo.etikett?.includes('i dag')
-        ? 'Siste salgsdag i dag'
-        : 'Siste salgsdag i morgen'
+      ? prisinfo.dagerIgjen === 0
+        ? t('Siste salgsdag i dag')
+        : t('Siste salgsdag i morgen')
       : null;
 
   return (
@@ -53,26 +55,26 @@ function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, k
       </VareBilde>
 
       <View style={styles.innhold}>
-        {prisinfo.grunn === 'tilbud' && prisinfo.etikett ? <Merkelapp tekst={prisinfo.etikett} variant="tilbud" /> : null}
-        <Text style={styles.navn}>{vare.navn}</Text>
+        {prisinfo.grunn === 'tilbud' && prisinfo.etikett ? <Merkelapp tekst={t(prisinfo.etikett)} variant="tilbud" /> : null}
+        <Text style={styles.navn}>{t(vare.navn)}</Text>
         <Text style={styles.beskrivelse} numberOfLines={2}>
-          {datoTekst ?? vare.beskrivelse}
+          {datoTekst ?? t(vare.beskrivelse)}
         </Text>
         {advarsel ? <Merkelapp tekst={advarsel} variant="dato" /> : null}
-        {utsolgt ? <Text style={styles.lager}>Utsolgt</Text> : null}
-        {faaIgjen ? <Text style={styles.lager}>Kun {vare.antallIgjen} igjen</Text> : null}
+        {utsolgt ? <Text style={styles.lager}>{t('Utsolgt')}</Text> : null}
+        {faaIgjen ? <Text style={styles.lager}>{t('Kun {antall} igjen', { antall: vare.antallIgjen })}</Text> : null}
         <Pris prisinfo={prisinfo} enhet={vare.enhet} />
         {vare.komponentvalg && antallIKurv > 0 ? (
           <Text style={styles.vekt}>
-            {antallIKurv} {antallIKurv === 1 ? 'tallerken' : 'tallerkener'} i handlekurven
+            {t(antallIKurv === 1 ? '{antall} tallerken i handlekurven' : '{antall} tallerkener i handlekurven', { antall: antallIKurv })}
           </Text>
         ) : vare.enhet === 'hg' && antallIKurv > 0 ? (
-          <Text style={styles.vekt}>Valgt: {formaterAntall(antallIKurv, 'hg')} – juster i handlekurven</Text>
+          <Text style={styles.vekt}>{t('Valgt: {mengde} – juster i handlekurven', { mengde: formaterAntall(antallIKurv, 'hg') })}</Text>
         ) : null}
       </View>
 
       <LeggTilKnapp
-        navn={vare.navn}
+        navn={t(vare.navn)}
         antallIKurv={antallIKurv}
         aktiv={kanLeggeTil && kanBestilles}
         onPress={() => onLeggTil(vare)}
@@ -83,7 +85,7 @@ function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, k
 
 export const VareKort = memo(VareKortKomponent);
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   kort: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -129,4 +131,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: farger.primaerMork,
   },
-});
+}));

@@ -1,28 +1,30 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bunnmeny } from '../src/components/Bunnmeny';
-import { Knapp } from '../src/components/Knapp';
+import { InfoBunn } from '../src/components/InfoBunn';
 import { Merkelapp } from '../src/components/Merkelapp';
 import { Pris } from '../src/components/Pris';
 import { ProfilKnapp } from '../src/components/ProfilKnapp';
-import { SioMerke } from '../src/components/SioMerke';
 import { Valgbrikke } from '../src/components/Valgbrikke';
 import { VareBilde } from '../src/components/VareBilde';
 import { useBruker } from '../src/context/BrukerContext';
+import { useInnstillinger } from '../src/context/InnstillingerContext';
 import { byggPaaCampus, campuser, hentBygg, hentKantine, kantinerIBygg } from '../src/data/kantiner';
 import { varer } from '../src/data/varer';
-import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift, skygge } from '../src/theme';
 import type { Kantine } from '../src/types';
+import { t } from '../src/i18n';
 import { erAapen } from '../src/utils/dato';
 import { beregnPris, erUtgaatt } from '../src/utils/pris';
 
 /** Startside: hilsen, dagens "redd maten"-tilbud, favoritt og valg av bygg. */
 export default function StartSkjerm() {
   const insets = useSafeAreaInsets();
+  useInnstillinger(); // tegnes på nytt når språk eller tema byttes
   const { student, preferanser } = useBruker();
   const favoritt = preferanser.favorittKantineId ? hentKantine(preferanser.favorittKantineId) : undefined;
   const fornavn = student?.navn.split(' ')[0];
@@ -72,62 +74,41 @@ export default function StartSkjerm() {
         </View>
 
         <View style={styles.hilsen}>
-          <Text style={skrift.liten}>{fornavn ? `Hei, ${fornavn}` : 'Hei!'}</Text>
-          <Text style={skrift.stor}>Hva frister i dag?</Text>
+          <Text style={skrift.liten}>{fornavn ? t('Hei, {navn}', { navn: fornavn }) : t('Hei!')}</Text>
+          <Text style={skrift.stor}>{t('Hva frister i dag?')}</Text>
         </View>
 
         {visVarsel && favoritt && (
           <Pressable
-            onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: favoritt.id } })}
+            onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: favoritt.id, fokus: 'redd' } })}
             accessibilityRole="button"
             style={({ pressed }) => [styles.varsel, pressed && { opacity: 0.85 }]}
           >
             <Ionicons name="notifications" size={20} color={farger.primaerMork} />
             <Text style={styles.varselTekst}>
-              {favoritt.navn} har {reddIFavoritt} {reddIFavoritt === 1 ? 'vare' : 'varer'} på «Redd maten» i dag
+              {t(reddIFavoritt === 1 ? '{kantine} har {antall} vare på «Redd maten» i dag' : '{kantine} har {antall} varer på «Redd maten» i dag', {
+                kantine: favoritt.navn,
+                antall: reddIFavoritt,
+              })}
             </Text>
             <Ionicons name="chevron-forward" size={18} color={farger.primaerMork} />
           </Pressable>
         )}
 
-        {/* Hovedmotiv */}
-        <View style={styles.motivKort}>
-          <Image
-            source={require('../assets/images/forside-motiv.png')}
-            style={styles.motiv}
-            resizeMode="cover"
-            accessibilityIgnoresInvertColors
-            accessible={false}
-          />
-          <View style={styles.motivInnhold}>
-            <Text style={skrift.tittel}>Lunsj uten kø</Text>
-            <Text style={skrift.liten}>
-              Varmdisk, kaffe og alt du trenger. Bestill i appen og hent når det passer deg.
-            </Text>
-            <Knapp
-              tittel={favoritt ? `Se menyen i ${favoritt.navn}` : 'Se menyen'}
-              onPress={() =>
-                router.push({ pathname: '/kantine/[id]', params: { id: favoritt?.id ?? 'p35-kantine' } })
-              }
-              style={styles.motivKnapp}
-            />
-          </View>
-        </View>
-
         {reddMaten && (
           <View style={styles.seksjon}>
-            <Text style={skrift.etikett}>Redd maten i dag</Text>
+            <Text style={skrift.etikett}>{t('Redd maten i dag')}</Text>
             <Pressable
-              onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: reddMaten.vare.kantineId } })}
+              onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: reddMaten.vare.kantineId, fokus: 'redd' } })}
               accessibilityRole="button"
               style={({ pressed }) => [styles.kantine, pressed && { opacity: 0.85 }]}
             >
               <VareBilde bilde={reddMaten.vare.bilde} style={styles.kantineBilde} />
               <View style={styles.flex}>
-                <Text style={skrift.fet}>{reddMaten.vare.navn}</Text>
+                <Text style={skrift.fet}>{t(reddMaten.vare.navn)}</Text>
                 <Text style={skrift.liten}>
                   {hentKantine(reddMaten.vare.kantineId)?.navn} ·{' '}
-                  {reddMaten.prisinfo.etikett?.includes('i dag') ? 'siste salgsdag i dag' : 'siste salgsdag i morgen'}
+                  {reddMaten.prisinfo.dagerIgjen === 0 ? t('siste salgsdag i dag') : t('siste salgsdag i morgen')}
                 </Text>
                 <Pris prisinfo={reddMaten.prisinfo} />
               </View>
@@ -142,14 +123,14 @@ export default function StartSkjerm() {
 
         {favoritt && (
           <View style={styles.seksjon}>
-            <Text style={skrift.etikett}>Din favoritt</Text>
+            <Text style={skrift.etikett}>{t('Din favoritt')}</Text>
             <KantineRad kantine={favoritt} />
           </View>
         )}
 
         <View style={styles.seksjon}>
           <View style={styles.seksjonTopp}>
-            <Text style={skrift.overskrift}>Hvor er du?</Text>
+            <Text style={skrift.overskrift}>{t('Hvor er du?')}</Text>
             <View style={styles.brikker}>
               {campuser.map((c) => (
                 <Valgbrikke
@@ -175,12 +156,12 @@ export default function StartSkjerm() {
                   onPress={() => setValgtByggId(b.id)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: valgt }}
-                  accessibilityLabel={`${b.navn}, ${antall} ${antall === 1 ? 'spisested' : 'spisesteder'}`}
+                  accessibilityLabel={`${b.navn}, ${t(antall === 1 ? '{antall} spisested' : '{antall} spisesteder', { antall })}`}
                   style={[styles.byggFlis, valgt && styles.byggFlisValgt]}
                 >
                   <Text style={[styles.byggNavn, valgt && { color: farger.primaerMork }]}>{b.kortnavn}</Text>
                   <Text style={[skrift.liten, valgt && { color: farger.primaerMork }]}>
-                    {antall} {antall === 1 ? 'sted' : 'steder'}
+                    {t(antall === 1 ? '{antall} sted' : '{antall} steder', { antall })}
                   </Text>
                 </Pressable>
               );
@@ -191,9 +172,7 @@ export default function StartSkjerm() {
             kantinerIBygg(valgtBygg.id).map((k) => <KantineRad key={k.id} kantine={k} />)}
         </View>
 
-        <View style={styles.sio}>
-          <SioMerke midtstilt />
-        </View>
+        <InfoBunn />
       </ScrollView>
 
       <Bunnmeny />
@@ -209,24 +188,24 @@ function KantineRad({ kantine }: { kantine: Kantine }) {
     <Pressable
       onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: kantine.id } })}
       accessibilityRole="button"
-      accessibilityLabel={`${kantine.navn}, ${aapen ? 'åpent' : 'stengt'}`}
+      accessibilityLabel={`${kantine.navn}, ${aapen ? t('åpent') : t('stengt')}`}
       style={({ pressed }) => [styles.kantine, pressed && { opacity: 0.85 }]}
     >
       <VareBilde bilde={kantine.bilde} style={styles.kantineBilde} />
       <View style={styles.flex}>
         <Text style={skrift.fet}>{kantine.navn}</Text>
         <Text style={skrift.liten}>
-          {bygg?.kortnavn} · {kantine.plassering}
-          {kantine.leveringTilBord ? ' · levering til bord' : ''}
+          {bygg?.kortnavn} · {t(kantine.plassering)}
+          {kantine.leveringTilBord ? ` · ${t('levering til bord')}` : ''}
         </Text>
       </View>
-      <Merkelapp tekst={aapen ? 'Åpent' : `Åpner ${kantine.aapner}`} variant={aapen ? 'suksess' : 'info'} />
+      <Merkelapp tekst={aapen ? t('Åpent') : t('Åpner {tid}', { tid: kantine.aapner })} variant={aapen ? 'suksess' : 'info'} />
       <Ionicons name="chevron-forward" size={18} color={farger.tekstDempet} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   skjerm: {
     flex: 1,
     backgroundColor: farger.bakgrunn,
@@ -277,23 +256,6 @@ const styles = StyleSheet.create({
     fontFamily: fonter.medium,
     fontSize: 14,
     color: farger.primaerMork,
-  },
-  motivKort: {
-    backgroundColor: farger.kort,
-    borderRadius: radius.xl,
-    overflow: 'hidden',
-    ...skygge,
-  },
-  motiv: {
-    width: '100%',
-    aspectRatio: 390 / 150,
-  },
-  motivInnhold: {
-    gap: avstand.xs,
-    padding: avstand.l + 2,
-  },
-  motivKnapp: {
-    marginTop: avstand.m,
   },
   flex: {
     flex: 1,
@@ -347,7 +309,4 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
   },
-  sio: {
-    marginTop: avstand.s,
-  },
-});
+}));

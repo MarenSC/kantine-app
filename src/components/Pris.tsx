@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { avstand, farger, fonter } from '../theme';
+import { avstand, farger, fonter, lagStiler } from '../theme';
+import { t } from '../i18n';
 import type { Enhet } from '../types';
 import { formaterPris, type Prisinfo } from '../utils/pris';
 
@@ -18,10 +19,10 @@ export function Pris({ prisinfo, enhet = 'stk' }: Props) {
     <View style={styles.rad}>
       <Text style={styles.pris}>
         {formaterPris(prisinfo.pris)}
-        {enhet === 'hg' ? <Text style={styles.enhet}> / hg</Text> : null}
+        {enhet === 'hg' ? <Text style={styles.enhet}> / {t('hg')}</Text> : null}
       </Text>
       {rabattert && (
-        <Text style={styles.ordinaer} accessibilityLabel={`Før ${formaterPris(prisinfo.ordinaerPris)}`}>
+        <Text style={styles.ordinaer} accessibilityLabel={t('Før {pris}', { pris: formaterPris(prisinfo.ordinaerPris) })}>
           {formaterPris(prisinfo.ordinaerPris)}
         </Text>
       )}
@@ -29,7 +30,7 @@ export function Pris({ prisinfo, enhet = 'stk' }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   rad: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -51,4 +52,4 @@ const styles = StyleSheet.create({
     color: farger.tekstDempet,
     textDecorationLine: 'line-through',
   },
-});
+}));

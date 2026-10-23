@@ -1,5 +1,7 @@
 import { Alert, Platform } from 'react-native';
 
+import { t } from '../i18n';
+
 /**
  * Dialoger som virker både i appen og på nett.
  * (Alert.alert med knapper gjør ingenting i nettleseren, så der brukes
@@ -13,7 +15,7 @@ export function bekreft(tittel: string, melding: string, jaTekst: string, onJa: 
     return;
   }
   Alert.alert(tittel, melding, [
-    { text: 'Avbryt', style: 'cancel' },
+    { text: t('Avbryt'), style: 'cancel' },
     { text: jaTekst, style: 'destructive', onPress: onJa },
   ]);
 }

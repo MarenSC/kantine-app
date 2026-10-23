@@ -45,3 +45,6 @@ example
 # Editor- og AI-innstillinger (lokale)
 .claude/
 .vscode/
+
+# Filer Claude har levert (kopier, ikke en del av appen)
+Claude outputs/

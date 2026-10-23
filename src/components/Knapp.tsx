@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-import { avstand, farger, fonter, radius } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius } from '../theme';
 
 interface Props {
   tittel: string;
@@ -34,7 +34,7 @@ export function Knapp({ tittel, onPress, variant = 'primaer', deaktivert = false
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   knapp: {
     minHeight: 50,
     paddingHorizontal: avstand.xl,
@@ -70,4 +70,4 @@ const styles = StyleSheet.create({
   tekstSekundaer: {
     color: farger.tekst,
   },
-});
+}));

@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { travelhetGjennomDagen, travelhetTekst } from '../data/travelhet';
 import { useNaa } from '../hooks/useNaa';
-import { avstand, farger, fonter, radius, skrift, skygge } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift, skygge } from '../theme';
+import { t } from '../i18n';
 import type { Kantine } from '../types';
 import { erAapen } from '../utils/dato';
 
@@ -14,42 +15,42 @@ export function Travelhet({ kantine }: { kantine: Kantine }) {
   const timer = travelhetGjennomDagen(kantine.id, kantine.aapner, kantine.stenger);
   const denneTimen = naa.getHours();
   const aapen = erAapen(kantine.aapner, kantine.stenger, naa);
-  const naaVerdi = timer.find((t) => t.time === denneTimen);
+  const naaVerdi = timer.find((x) => x.time === denneTimen);
 
   const oppsummering =
-    aapen && naaVerdi ? `${travelhetTekst(naaVerdi.nivaa)} akkurat nå` : 'Stengt nå – slik pleier det å være';
+    aapen && naaVerdi ? t(`${travelhetTekst(naaVerdi.nivaa)} akkurat nå`) : t('Stengt nå – slik pleier det å være');
 
   // Roligste time etter nå, som tips til studenten
   const roligst = timer
-    .filter((t) => t.time > denneTimen)
+    .filter((x) => x.time > denneTimen)
     .sort((a, b) => a.nivaa - b.nivaa)[0];
 
   return (
     <View
       style={styles.kort}
       accessible
-      accessibilityLabel={`Hvor fullt er det? ${oppsummering}.${roligst ? ` Roligst klokken ${roligst.time}.` : ''}`}
+      accessibilityLabel={`${t('Hvor fullt er det?')} ${oppsummering}.${roligst ? ` ${t('Roligst klokken {time}.', { time: roligst.time })}` : ''}`}
     >
       <View style={styles.topp}>
-        <Text style={skrift.fet}>Hvor fullt er det?</Text>
+        <Text style={skrift.fet}>{t('Hvor fullt er det?')}</Text>
         <Text style={skrift.liten}>{oppsummering}</Text>
       </View>
 
       <View style={styles.soyler}>
-        {timer.map((t) => {
-          const erNaa = aapen && t.time === denneTimen;
+        {timer.map((time) => {
+          const erNaa = aapen && time.time === denneTimen;
           return (
-            <View key={t.time} style={styles.kolonne}>
+            <View key={time.time} style={styles.kolonne}>
               <View style={styles.spor}>
                 <View
                   style={[
                     styles.soyle,
-                    { height: Math.max(4, (t.nivaa / 100) * MAKS_HOYDE) },
+                    { height: Math.max(4, (time.nivaa / 100) * MAKS_HOYDE) },
                     erNaa && styles.soyleNaa,
                   ]}
                 />
               </View>
-              <Text style={[styles.time, erNaa && styles.timeNaa]}>{t.time % 2 === 0 || erNaa ? t.time : ''}</Text>
+              <Text style={[styles.time, erNaa && styles.timeNaa]}>{time.time % 2 === 0 || erNaa ? time.time : ''}</Text>
             </View>
           );
         })}
@@ -57,14 +58,14 @@ export function Travelhet({ kantine }: { kantine: Kantine }) {
 
       {roligst ? (
         <Text style={skrift.liten}>
-          Tips: Roligst rundt kl. {String(roligst.time).padStart(2, '0')}:00
+          {t('Tips: Roligst rundt kl. {tid}', { tid: `${String(roligst.time).padStart(2, '0')}:00` })}
         </Text>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   kort: {
     gap: avstand.m,
     padding: avstand.l,
@@ -107,4 +108,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.fet,
     color: farger.primaerMork,
   },
-});
+}));

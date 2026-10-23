@@ -1,4 +1,4 @@
-import { Appearance } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 /**
  * Designsystemet "Terrakotta": farger, skrifter, avstander og runding.
@@ -64,13 +64,54 @@ const mork: Palett = {
   ramme: '#110E0C',
 };
 
-/**
- * Mørk modus følger systeminnstillingen når appen starter.
- * (Bytter man modus mens appen er åpen, gjelder det fra neste oppstart.)
- */
-export const erMorkModus = Appearance.getColorScheme() === 'dark';
+export type Temanavn = 'lys' | 'mork';
 
-export const farger: Palett = erMorkModus ? mork : lys;
+const paletter: Record<Temanavn, Palett> = { lys, mork };
+
+/**
+ * Hvilket tema som vises nå. Settes av InnstillingerContext
+ * (System / Lys / Mørk under Innstillinger).
+ */
+let aktivtTema: Temanavn = 'lys';
+
+export function settAktivtTema(tema: Temanavn) {
+  aktivtTema = tema;
+}
+
+export function erMorkModus(): boolean {
+  return aktivtTema === 'mork';
+}
+
+/**
+ * Lager en verdi som regnes ut på nytt når temaet byttes (og huskes per tema).
+ * Brukes for alt som inneholder farger, f.eks. stilark.
+ */
+export function lagTemaverdi<T extends object>(lag: () => T): T {
+  const lagret: Partial<Record<Temanavn, T>> = {};
+  return new Proxy({} as T, {
+    get(_mal, nokkel) {
+      const verdi = (lagret[aktivtTema] ??= lag());
+      return (verdi as Record<string | symbol, unknown>)[nokkel];
+    },
+  });
+}
+
+/**
+ * Som StyleSheet.create, men fargene følger valgt tema.
+ * Bruk: const styles = lagStiler(() => ({ boks: { backgroundColor: farger.kort } }));
+ */
+type Stiler = Parameters<typeof StyleSheet.create>[0];
+
+export function lagStiler<S extends Stiler>(lag: () => S & Stiler): Readonly<S> {
+  return lagTemaverdi(() => StyleSheet.create(lag()));
+}
+
+/** Fargene i aktivt tema. Leses når skjermen tegnes, så de bytter med temaet. */
+export const farger: Palett = new Proxy({} as Palett, {
+  get(_mal, nokkel) {
+    return paletter[aktivtTema][nokkel as keyof Palett];
+  },
+});
 
 /** Navnene må stemme med det som lastes i app/_layout.tsx */
 export const fonter = {
@@ -109,7 +150,7 @@ export const skygge = {
   elevation: 2,
 } as const;
 
-export const skrift = {
+export const skrift = lagTemaverdi(() => ({
   stor: { fontFamily: fonter.tittel, fontSize: 32, color: farger.tekst, letterSpacing: -0.8 },
   tittel: { fontFamily: fonter.tittel, fontSize: 24, color: farger.tekst, letterSpacing: -0.4 },
   overskrift: { fontFamily: fonter.tittel, fontSize: 19, color: farger.tekst },
@@ -124,4 +165,4 @@ export const skrift = {
     textTransform: 'uppercase' as const,
     color: farger.tekstDempet,
   },
-};
+}));

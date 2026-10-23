@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { feideErKonfigurert } from '../auth/feide';
 import { useFeideInnlogging } from '../auth/useFeideInnlogging';
 import { DEMO_STUDENT, useBruker } from '../context/BrukerContext';
-import { avstand, farger, fonter, skrift } from '../theme';
+import { t } from '../i18n';
+import { avstand, farger, fonter, lagStiler, skrift } from '../theme';
 import { Knapp } from './Knapp';
 
 /**
@@ -19,9 +20,9 @@ function DemoFeideKnapp() {
 
   return (
     <View style={styles.beholder}>
-      <Knapp tittel="Logg inn med Feide" onPress={() => loggInn(DEMO_STUDENT)} />
+      <Knapp tittel={t('Logg inn med Feide')} onPress={() => loggInn(DEMO_STUDENT)} />
       <Text style={[skrift.liten, styles.midtstilt]}>
-        Demo: Du logges inn som en testbruker. Ekte Feide-innlogging kobles på senere.
+        {t('Demo: Du logges inn som en testbruker. Ekte Feide-innlogging kobles på senere.')}
       </Text>
     </View>
   );
@@ -34,7 +35,7 @@ function EkteFeideKnapp() {
   return (
     <View style={styles.beholder}>
       <Knapp
-        tittel={laster ? 'Logger inn …' : 'Logg inn med Feide'}
+        tittel={laster ? t('Logger inn …') : t('Logg inn med Feide')}
         onPress={start}
         deaktivert={!klar || laster}
       />
@@ -43,7 +44,7 @@ function EkteFeideKnapp() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   beholder: {
     alignSelf: 'stretch',
     gap: avstand.s,
@@ -56,4 +57,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.medium,
     fontSize: 14,
   },
-});
+}));

@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MAKS_BREDDE, avstand, farger, fonter, radius, skrift } from '../theme';
+import { MAKS_BREDDE, avstand, farger, fonter, lagStiler, radius, skrift } from '../theme';
+import { t } from '../i18n';
 import type { Komponent, Vare } from '../types';
 import { formaterPris, prisForVekt } from '../utils/pris';
 import { Knapp } from './Knapp';
@@ -51,7 +52,7 @@ export function VarmdiskVelger({ vare, onLeggTil, onLukk }: Props) {
 
   return (
     <Modal visible={vare !== null} transparent animationType="slide" onRequestClose={onLukk}>
-      <Pressable style={styles.bakgrunn} onPress={onLukk} accessibilityLabel="Lukk" />
+      <Pressable style={styles.bakgrunn} onPress={onLukk} accessibilityLabel={t('Lukk')} />
       <View style={[styles.ark, { paddingBottom: Math.max(insets.bottom, avstand.l) }]}>
         <View style={styles.handtak} />
         {vare ? (
@@ -59,15 +60,15 @@ export function VarmdiskVelger({ vare, onLeggTil, onLukk }: Props) {
             <View style={styles.topp}>
               <VareBilde bilde={vare.bilde} style={styles.bilde} />
               <View style={styles.flex}>
-                <Text style={skrift.overskrift}>Sett sammen tallerkenen</Text>
-                <Text style={skrift.liten}>{formaterPris(vare.pris)} per hekto (100 g)</Text>
+                <Text style={skrift.overskrift}>{t('Sett sammen tallerkenen')}</Text>
+                <Text style={skrift.liten}>{t('{pris} per hekto (100 g)', { pris: formaterPris(vare.pris) })}</Text>
               </View>
             </View>
 
             <View style={styles.notis}>
               <Ionicons name="storefront-outline" size={18} color={farger.dato} />
               <Text style={styles.notisTekst}>
-                Dette er et utvalg. Besøker du kantina, finner du enda flere retter i varmdisken.
+                {t('Dette er et utvalg. Besøker du kantina, finner du enda flere retter i varmdisken.')}
               </Text>
             </View>
 
@@ -78,31 +79,31 @@ export function VarmdiskVelger({ vare, onLeggTil, onLukk }: Props) {
                   <View key={v.navn} style={[styles.rad, g > 0 && styles.radValgt]}>
                     <View style={styles.flex}>
                       <View style={styles.navnRad}>
-                        <Text style={styles.navn}>{v.navn}</Text>
+                        <Text style={styles.navn}>{t(v.navn)}</Text>
                         {v.vegetar ? (
-                          <Ionicons name="leaf" size={14} color={farger.suksess} accessibilityLabel="Vegetar" />
+                          <Ionicons name="leaf" size={14} color={farger.suksess} accessibilityLabel={t('Vegetar')} />
                         ) : null}
                       </View>
-                      <Text style={skrift.liten}>{g > 0 ? `${g} g · ${formaterPris(prisForVekt(vare.pris, g))}` : 'Ikke valgt'}</Text>
+                      <Text style={skrift.liten}>{g > 0 ? `${g} g · ${formaterPris(prisForVekt(vare.pris, g))}` : t('Ikke valgt')}</Text>
                     </View>
                     <Pressable
                       onPress={() => endre(v.navn, -STEG_GRAM)}
                       disabled={g === 0}
                       accessibilityRole="button"
-                      accessibilityLabel={`Mindre ${v.navn}`}
+                      accessibilityLabel={t('Mindre {navn}', { navn: t(v.navn) })}
                       style={[styles.knapp, g === 0 && styles.knappAv]}
                       hitSlop={6}
                     >
                       <Ionicons name="remove" size={18} color={g === 0 ? farger.tekstDempet : farger.primaerMork} />
                     </Pressable>
-                    <Text style={styles.gram} accessibilityLabel={`${g} gram ${v.navn}`}>
+                    <Text style={styles.gram} accessibilityLabel={`${g} g ${t(v.navn)}`}>
                       {g} g
                     </Text>
                     <Pressable
                       onPress={() => endre(v.navn, STEG_GRAM)}
                       disabled={g >= MAKS_GRAM}
                       accessibilityRole="button"
-                      accessibilityLabel={`Mer ${v.navn}`}
+                      accessibilityLabel={t('Mer {navn}', { navn: t(v.navn) })}
                       style={[styles.knapp, g >= MAKS_GRAM && styles.knappAv]}
                       hitSlop={6}
                     >
@@ -114,15 +115,15 @@ export function VarmdiskVelger({ vare, onLeggTil, onLukk }: Props) {
             </ScrollView>
 
             <View style={styles.sum}>
-              <Text style={skrift.fet}>Totalt {total} g</Text>
+              <Text style={skrift.fet}>{t('Totalt')} {total} g</Text>
               <Text style={styles.sumPris}>{formaterPris(pris)}</Text>
             </View>
             <Knapp
-              tittel={total > 0 ? `Legg til tallerken · ${formaterPris(pris)}` : 'Velg minst én rett'}
+              tittel={total > 0 ? `${t('Legg til tallerken')} · ${formaterPris(pris)}` : t('Velg minst én rett')}
               deaktivert={total === 0}
               onPress={leggTil}
             />
-            <Knapp tittel="Avbryt" variant="sekundaer" onPress={onLukk} />
+            <Knapp tittel={t('Avbryt')} variant="sekundaer" onPress={onLukk} />
           </>
         ) : null}
       </View>
@@ -130,7 +131,7 @@ export function VarmdiskVelger({ vare, onLeggTil, onLukk }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   bakgrunn: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -241,4 +242,4 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: farger.tekst,
   },
-});
+}));

@@ -19,8 +19,10 @@ import { TomTilstand } from '../src/components/TomTilstand';
 import { Valgbrikke } from '../src/components/Valgbrikke';
 import { useBestilling } from '../src/context/BestillingContext';
 import { useBruker } from '../src/context/BrukerContext';
+import { useInnstillinger } from '../src/context/InnstillingerContext';
 import { hentKantine } from '../src/data/kantiner';
-import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift, skygge } from '../src/theme';
+import { t } from '../src/i18n';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
 import { formaterPris, perEnhet, totalGram } from '../src/utils/pris';
 import { gaaHjem } from '../src/utils/navigasjon';
@@ -32,6 +34,7 @@ const HENTETIDER_MINUTTER = [10, 20, 30, 45, 60];
 
 export default function HandlekurvSkjerm() {
   const insets = useSafeAreaInsets();
+  useInnstillinger(); // tegnes på nytt når språk eller tema byttes
   const { kurvKantineId, kurvVarer, totalpris, spart, settAntall, sendBestilling } = useBestilling();
   const { student } = useBruker();
   const kantine = kurvKantineId ? hentKantine(kurvKantineId) : undefined;
@@ -48,10 +51,10 @@ export default function HandlekurvSkjerm() {
     return (
       <TomTilstand
         ikon="cart-outline"
-        tittel="Handlekurven er tom"
-        tekst="Velg en kantine og legg til mat eller drikke."
+        tittel={t('Handlekurven er tom')}
+        tekst={t('Velg en kantine og legg til mat eller drikke.')}
       >
-        <Knapp tittel="Se kantiner" variant="sekundaer" onPress={() => gaaHjem()} />
+        <Knapp tittel={t('Se kantiner')} variant="sekundaer" onPress={() => gaaHjem()} />
       </TomTilstand>
     );
   }
@@ -84,7 +87,7 @@ export default function HandlekurvSkjerm() {
           <View style={styles.advarsel}>
             <Ionicons name="time-outline" size={18} color={farger.dato} />
             <Text style={styles.advarselTekst}>
-              Kantina er stengt nå (åpent {kantine.aapner}–{kantine.stenger}).
+              {t('Kantina er stengt nå (åpent {fra}–{til}).', { fra: kantine.aapner, til: kantine.stenger })}
             </Text>
           </View>
         )}
@@ -94,17 +97,17 @@ export default function HandlekurvSkjerm() {
           {kurvVarer.map(({ nokkel, vare, variant, komponenter, antall, prisinfo, linjesum }, indeks) => (
             <View key={nokkel} style={[styles.linje, indeks > 0 && styles.linjeSkille]}>
               <View style={styles.linjeTekst}>
-                <Text style={styles.vareNavn}>{vare.navn}</Text>
-                {variant ? <Text style={styles.variant}>{variant}</Text> : null}
+                <Text style={styles.vareNavn}>{t(vare.navn)}</Text>
+                {variant ? <Text style={styles.variant}>{t(variant)}</Text> : null}
                 {komponenter ? (
                   <Text style={styles.variant}>
-                    {komponenter.map((k) => `${k.navn} ${k.gram} g`).join(' · ')}
+                    {komponenter.map((k) => `${t(k.navn)} ${k.gram} g`).join(' · ')}
                   </Text>
                 ) : null}
                 <Text style={skrift.liten}>
                   {formaterPris(prisinfo.pris)}{' '}
-                  {komponenter ? `per tallerken (${totalGram(komponenter)} g)` : perEnhet(vare.enhet)}
-                  {prisinfo.grunn ? `  (før ${formaterPris(prisinfo.ordinaerPris)})` : ''}
+                  {komponenter ? t('per tallerken ({gram} g)', { gram: totalGram(komponenter) }) : perEnhet(vare.enhet)}
+                  {prisinfo.grunn ? `  (${t('før {pris}', { pris: formaterPris(prisinfo.ordinaerPris) })})` : ''}
                 </Text>
               </View>
               <View style={styles.linjeHoyre}>
@@ -121,20 +124,20 @@ export default function HandlekurvSkjerm() {
         </View>
 
         {/* ---------- Henting eller levering ---------- */}
-        <Text style={styles.seksjonTittel}>Hvordan vil du få maten?</Text>
+        <Text style={styles.seksjonTittel}>{t('Hvordan vil du få maten?')}</Text>
 
         <View style={styles.valgRad}>
           <Leveringsvalg
             ikon="walk-outline"
-            tittel="Hent selv"
-            undertekst="Reserver og hent i kantina"
+            tittel={t('Hent selv')}
+            undertekst={t('Reserver og hent i kantina')}
             valgt={valg === 'henting'}
             onPress={() => setValg('henting')}
           />
           <Leveringsvalg
             ikon="bicycle-outline"
-            tittel="Lever til meg"
-            undertekst={kantine.leveringTilBord ? 'Dit du sitter' : 'Ikke tilgjengelig her'}
+            tittel={t('Lever til meg')}
+            undertekst={kantine.leveringTilBord ? t('Dit du sitter') : t('Ikke tilgjengelig her')}
             valgt={valg === 'levering'}
             deaktivert={!kantine.leveringTilBord}
             onPress={() => setValg('levering')}
@@ -143,7 +146,7 @@ export default function HandlekurvSkjerm() {
 
         {valg === 'henting' ? (
           <View style={styles.gruppe}>
-            <Text style={styles.etikett}>Når vil du hente?</Text>
+            <Text style={styles.etikett}>{t('Når vil du hente?')}</Text>
             <View style={styles.brikker}>
               {HENTETIDER_MINUTTER.map((min) => (
                 <Valgbrikke
@@ -157,11 +160,11 @@ export default function HandlekurvSkjerm() {
           </View>
         ) : (
           <View style={styles.gruppe}>
-            <Text style={styles.etikett}>Hvor sitter du?</Text>
+            <Text style={styles.etikett}>{t('Hvor sitter du?')}</Text>
             <TextInput
               value={plassering}
               onChangeText={setPlassering}
-              placeholder="F.eks. P35, 3. etasje, bord ved vinduet"
+              placeholder={t('F.eks. P35, 3. etasje, bord ved vinduet')}
               placeholderTextColor={farger.tekstDempet}
               style={styles.input}
               returnKeyType="done"
@@ -170,11 +173,11 @@ export default function HandlekurvSkjerm() {
         )}
 
         <View style={styles.gruppe}>
-          <Text style={styles.etikett}>Kommentar til kantina (valgfritt)</Text>
+          <Text style={styles.etikett}>{t('Kommentar til kantina (valgfritt)')}</Text>
           <TextInput
             value={kommentar}
             onChangeText={setKommentar}
-            placeholder="F.eks. allergier eller uten løk"
+            placeholder={t('F.eks. allergier eller uten løk')}
             placeholderTextColor={farger.tekstDempet}
             style={[styles.input, styles.inputFlerlinje]}
             multiline
@@ -185,27 +188,27 @@ export default function HandlekurvSkjerm() {
         <View style={styles.kort}>
           {spart > 0 && (
             <View style={styles.sumRad}>
-              <Text style={[skrift.brodtekst, { color: farger.suksess }]}>Du sparer</Text>
+              <Text style={[skrift.brodtekst, { color: farger.suksess }]}>{t('Du sparer')}</Text>
               <Text style={[skrift.brodtekst, { color: farger.suksess }]}>{formaterPris(spart)}</Text>
             </View>
           )}
           <View style={styles.sumRad}>
-            <Text style={skrift.overskrift}>Totalt</Text>
+            <Text style={skrift.overskrift}>{t('Totalt')}</Text>
             <Text style={skrift.overskrift}>{formaterPris(totalpris)}</Text>
           </View>
-          <Text style={skrift.liten}>Du betaler når du henter eller får maten levert.</Text>
+          <Text style={skrift.liten}>{t('Du betaler når du henter eller får maten levert.')}</Text>
         </View>
       </ScrollView>
 
       <View style={[styles.bunn, { paddingBottom: Math.max(insets.bottom, avstand.l) }]}>
         {student ? (
           <Knapp
-            tittel={`Bekreft bestilling · ${formaterPris(totalpris)}`}
+            tittel={`${t('Bekreft bestilling')} · ${formaterPris(totalpris)}`}
             onPress={bekreft}
             deaktivert={manglerPlassering}
           />
         ) : (
-          <Knapp tittel="Logg inn med Feide for å bestille" onPress={() => router.push('/min-side')} />
+          <Knapp tittel={t('Logg inn med Feide for å bestille')} onPress={() => router.push('/min-side')} />
         )}
       </View>
     </KeyboardAvoidingView>
@@ -237,7 +240,7 @@ function Leveringsvalg({ ikon, tittel, undertekst, valgt, deaktivert, onPress }:
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   skjerm: {
     flex: 1,
   },
@@ -366,4 +369,4 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: farger.kant,
   },
-});
+}));

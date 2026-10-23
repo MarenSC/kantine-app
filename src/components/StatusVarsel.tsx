@@ -1,13 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, usePathname } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentProps } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBestilling } from '../context/BestillingContext';
+import { useInnstillinger } from '../context/InnstillingerContext';
 import { hentKantine } from '../data/kantiner';
 import { useNaa } from '../hooks/useNaa';
-import { avstand, farger, fonter, radius } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius } from '../theme';
 import type { Bestillingssteg } from '../types';
 import { klokkeslett } from '../utils/dato';
 import { hentStatus } from '../utils/status';
@@ -28,6 +29,7 @@ const ikon: Record<Bestillingssteg, ComponentProps<typeof Ionicons>['name']> = {
  * Studenten kan lukke det – det kommer tilbake ved neste statusendring.
  */
 export function StatusVarsel() {
+  const { t } = useInnstillinger();
   const { bestillinger } = useBestilling();
   const naa = useNaa(5_000);
   const sti = usePathname();
@@ -69,11 +71,11 @@ export function StatusVarsel() {
   const detalj =
     l.type === 'henting'
       ? erKlar
-        ? `Vis koden #${bestilling.hentekode} i kassa`
-        : `Hentes ca. kl. ${klokkeslett(new Date(l.hentetid))} · #${bestilling.hentekode}`
+        ? t('Vis koden #{kode} og sveip i kassa', { kode: bestilling.hentekode })
+        : `${t('Hentes ca. kl. {tid}', { tid: klokkeslett(new Date(l.hentetid)) })} · #${bestilling.hentekode}`
       : erKlar
-        ? `På vei til ${l.plassering}`
-        : `Leveres til ${l.plassering}`;
+        ? t('På vei til {sted}', { sted: l.plassering })
+        : t('Leveres til {sted}', { sted: l.plassering });
 
   return (
     <Animated.View
@@ -91,7 +93,7 @@ export function StatusVarsel() {
         onPress={() => router.push({ pathname: '/bestillinger/[id]', params: { id: bestilling.id } })}
         accessibilityRole="button"
         accessibilityLiveRegion="polite"
-        accessibilityLabel={`Bestilling ${bestilling.hentekode}: ${status.tekst}. ${detalj}. Trykk for detaljer.`}
+        accessibilityLabel={`${t('Bestilling')} ${bestilling.hentekode}: ${status.tekst}. ${detalj}. ${t('Trykk for detaljer.')}`}
         style={({ pressed }) => [styles.kort, erKlar && styles.kortKlar, pressed && { opacity: 0.92 }]}
       >
         <View style={[styles.ikon, erKlar && styles.ikonKlar]}>
@@ -101,7 +103,7 @@ export function StatusVarsel() {
         <View style={styles.tekst}>
           <View style={styles.toppRad}>
             <Text style={[styles.tittel, erKlar && styles.tittelKlar]}>{status.tekst}</Text>
-            {aktive.length > 1 ? <Text style={styles.flere}>+{aktive.length - 1} til</Text> : null}
+            {aktive.length > 1 ? <Text style={styles.flere}>{t('+{antall} til', { antall: aktive.length - 1 })}</Text> : null}
           </View>
           <Text style={styles.detalj} numberOfLines={1}>
             {kantine?.navn} · {detalj}
@@ -113,10 +115,17 @@ export function StatusVarsel() {
           </View>
         </View>
 
+        {erKlar ? (
+          // Snarvei til kvitteringen, der studenten sveiper for å bekrefte
+          <View style={styles.handling}>
+            <Text style={styles.handlingTekst}>{l.type === 'henting' ? t('Vis kode') : t('Bekreft')}</Text>
+          </View>
+        ) : null}
+
         <Pressable
           onPress={() => setLukket((x) => ({ ...x, [bestilling.id]: status.steg }))}
           accessibilityRole="button"
-          accessibilityLabel="Skjul statusvarsel"
+          accessibilityLabel={t('Skjul statusvarsel')}
           hitSlop={10}
           style={styles.lukk}
         >
@@ -127,7 +136,7 @@ export function StatusVarsel() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   ytre: {
     position: 'absolute',
     left: avstand.m,
@@ -209,8 +218,19 @@ const styles = StyleSheet.create({
   segmentKlar: {
     backgroundColor: farger.suksess,
   },
+  handling: {
+    paddingHorizontal: avstand.m,
+    paddingVertical: avstand.s - 2,
+    borderRadius: radius.rund,
+    backgroundColor: farger.suksess,
+  },
+  handlingTekst: {
+    fontFamily: fonter.fet,
+    fontSize: 13,
+    color: farger.suksessLys,
+  },
   lukk: {
     alignSelf: 'flex-start',
     padding: 2,
   },
-});
+}));

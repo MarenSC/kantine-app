@@ -211,6 +211,8 @@ interface BestillingContextVerdi {
   /** Legger varene fra en tidligere bestilling i kurven. Returnerer hvor mange varer som fortsatt fantes. */
   bestillIgjen: (bestilling: Bestilling) => number;
   giTilbakemelding: (id: string, tilbakemelding: Tilbakemelding) => void;
+  /** Studenten bekrefter (med sveip) at maten er hentet/levert. Bestillingen arkiveres. */
+  bekreftUtlevert: (id: string) => void;
 }
 
 const BestillingContext = createContext<BestillingContextVerdi | null>(null);
@@ -364,6 +366,16 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const bekreftUtlevert = useCallback(
+    (id: string) =>
+      dispatch({
+        type: 'OPPDATER_BESTILLING',
+        id,
+        endring: { status: 'utlevert', utlevertTid: new Date().toISOString() },
+      }),
+    [],
+  );
+
   const verdi: BestillingContextVerdi = {
     kurvKantineId: state.kurvKantineId,
     kurvVarer,
@@ -381,6 +393,7 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     hentBestilling,
     bestillIgjen,
     giTilbakemelding,
+    bekreftUtlevert,
   };
 
   return <BestillingContext.Provider value={verdi}>{children}</BestillingContext.Provider>;

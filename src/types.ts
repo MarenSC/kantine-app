@@ -159,8 +159,10 @@ export interface Bestilling {
   opprettet: string;
   /** Kode studenten viser frem ved henting */
   hentekode: string;
-  /** Status satt av kantina (i en fremtidig versjon). Mangler = simulert status. */
+  /** Status satt av appen/kantina. Mangler = simulert status. 'utlevert' settes når studenten sveiper i kassa. */
   status?: Bestillingssteg;
+  /** ISO-tidspunkt for når studenten bekreftet at maten var hentet/levert */
+  utlevertTid?: string;
   tilbakemelding?: Tilbakemelding;
 }
 

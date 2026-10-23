@@ -42,7 +42,7 @@ export function travelhetGjennomDagen(kantineId: string, aapner: string, stenger
     .filter((t) => t.time >= fra && t.time <= til);
 }
 
-/** Kort beskrivelse av et travelhetsnivå. */
+/** Kort beskrivelse av et travelhetsnivå (norsk – oversettes ved visning). */
 export function travelhetTekst(nivaa: number): string {
   if (nivaa >= 70) return 'Travelt';
   if (nivaa >= 40) return 'Litt travelt';

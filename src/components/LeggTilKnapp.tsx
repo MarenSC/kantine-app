@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { farger, fonter, radius } from '../theme';
+import { t } from '../i18n';
+import { farger, fonter, lagStiler, radius } from '../theme';
 
 interface Props {
   navn: string;
@@ -19,7 +20,11 @@ export function LeggTilKnapp({ navn, antallIKurv, aktiv, onPress }: Props) {
       onPress={onPress}
       disabled={!aktiv}
       accessibilityRole="button"
-      accessibilityLabel={iKurv ? `${navn}, ${antallIKurv} i handlekurven. Legg til én til` : `Legg ${navn} i handlekurven`}
+      accessibilityLabel={
+        iKurv
+          ? t('{navn}, {antall} i handlekurven. Legg til én til', { navn, antall: antallIKurv })
+          : t('Legg {navn} i handlekurven', { navn })
+      }
       style={({ pressed }) => [
         styles.knapp,
         iKurv && styles.iKurv,
@@ -33,7 +38,7 @@ export function LeggTilKnapp({ navn, antallIKurv, aktiv, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   knapp: {
     width: 44,
     height: 44,
@@ -53,4 +58,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.fet,
     fontSize: 16,
   },
-});
+}));

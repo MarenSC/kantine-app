@@ -1,4 +1,5 @@
 import { varer } from '../data/varer';
+import { t } from '../i18n';
 import type { Preferanser, Vare } from '../types';
 
 /** Alle allergener som finnes i menyene, sortert alfabetisk. */
@@ -14,8 +15,8 @@ export function kostholdsadvarsel(vare: Vare, preferanser: Preferanser): string 
   const treff = vare.allergener.filter((a) => preferanser.allergener.includes(a));
   const deler: string[] = [];
 
-  if (treff.length > 0) deler.push(`Inneholder ${treff.join(', ')}`);
-  if (preferanser.vegetar && !vare.vegetar) deler.push('Ikke vegetar');
+  if (treff.length > 0) deler.push(t('Inneholder {allergener}', { allergener: treff.map((a) => t(a)).join(', ') }));
+  if (preferanser.vegetar && !vare.vegetar) deler.push(t('Ikke vegetar'));
 
   return deler.length > 0 ? deler.join(' · ') : null;
 }

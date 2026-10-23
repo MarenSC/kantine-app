@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ReactNode } from 'react';
-import { Image, StyleSheet, View, type ImageSourcePropType, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, View, type ImageSourcePropType, type StyleProp, type ViewStyle } from 'react-native';
 
-import { farger, radius } from '../theme';
+import { farger, lagStiler, radius } from '../theme';
 
 interface Props {
   bilde?: ImageSourcePropType;
@@ -27,7 +27,7 @@ export function VareBilde({ bilde, tilpasning = 'cover', style, children }: Prop
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   ramme: {
     overflow: 'hidden',
     borderRadius: radius.m,
@@ -45,4 +45,4 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-});
+}));

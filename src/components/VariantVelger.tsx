@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MAKS_BREDDE, avstand, farger, fonter, radius, skrift } from '../theme';
+import { MAKS_BREDDE, avstand, farger, fonter, lagStiler, radius, skrift } from '../theme';
+import { t } from '../i18n';
 import type { Vare } from '../types';
 import { Knapp } from './Knapp';
 import { VareBilde } from './VareBilde';
@@ -29,7 +30,7 @@ export function VariantVelger({ vare, onVelg, onLukk }: Props) {
 
   return (
     <Modal visible={vare !== null} transparent animationType="slide" onRequestClose={onLukk}>
-      <Pressable style={styles.bakgrunn} onPress={onLukk} accessibilityLabel="Lukk" />
+      <Pressable style={styles.bakgrunn} onPress={onLukk} accessibilityLabel={t('Lukk')} />
       <View style={[styles.ark, { paddingBottom: Math.max(insets.bottom, avstand.l) }]}>
         <View style={styles.handtak} />
         {vare ? (
@@ -37,8 +38,8 @@ export function VariantVelger({ vare, onVelg, onLukk }: Props) {
             <View style={styles.topp}>
               <VareBilde bilde={vare.bilde} tilpasning="contain" style={styles.bilde} />
               <View style={styles.flex}>
-                <Text style={skrift.overskrift}>{vare.navn}</Text>
-                <Text style={skrift.liten}>{vare.variantTittel ?? 'Velg variant'}</Text>
+                <Text style={skrift.overskrift}>{t(vare.navn)}</Text>
+                <Text style={skrift.liten}>{t(vare.variantTittel ?? 'Velg variant')}</Text>
               </View>
             </View>
 
@@ -53,7 +54,7 @@ export function VariantVelger({ vare, onVelg, onLukk }: Props) {
                     accessibilityState={{ checked: erValgt }}
                     style={[styles.rad, erValgt && styles.radValgt]}
                   >
-                    <Text style={[styles.radTekst, erValgt && styles.radTekstValgt]}>{v}</Text>
+                    <Text style={[styles.radTekst, erValgt && styles.radTekstValgt]}>{t(v)}</Text>
                     <Ionicons
                       name={erValgt ? 'radio-button-on' : 'radio-button-off'}
                       size={22}
@@ -65,11 +66,11 @@ export function VariantVelger({ vare, onVelg, onLukk }: Props) {
             </View>
 
             <Knapp
-              tittel={valgt ? `Legg til ${valgt}` : 'Velg et alternativ'}
+              tittel={valgt ? t('Legg til {valg}', { valg: t(valgt) }) : t('Velg et alternativ')}
               deaktivert={!valgt}
               onPress={() => valgt && onVelg(valgt)}
             />
-            <Knapp tittel="Avbryt" variant="sekundaer" onPress={onLukk} />
+            <Knapp tittel={t('Avbryt')} variant="sekundaer" onPress={onLukk} />
           </>
         ) : null}
       </View>
@@ -77,7 +78,7 @@ export function VariantVelger({ vare, onVelg, onLukk }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   bakgrunn: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -141,4 +142,4 @@ const styles = StyleSheet.create({
     fontFamily: fonter.fet,
     color: farger.primaerMork,
   },
-});
+}));

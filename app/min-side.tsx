@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { Bunnmeny } from '../src/components/Bunnmeny';
 import { FeideLoggInnKnapp } from '../src/components/FeideLoggInnKnapp';
@@ -12,9 +12,11 @@ import { Stempelkort } from '../src/components/Stempelkort';
 import { Valgbrikke } from '../src/components/Valgbrikke';
 import { useBestilling } from '../src/context/BestillingContext';
 import { useBruker } from '../src/context/BrukerContext';
+import { useInnstillinger } from '../src/context/InnstillingerContext';
 import { hentKantine, kantiner } from '../src/data/kantiner';
 import { useNaa } from '../src/hooks/useNaa';
-import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
+import { avstand, farger, fonter, lagStiler, radius, skrift, skygge } from '../src/theme';
+import { t } from '../src/i18n';
 import { klokkeslett } from '../src/utils/dato';
 import { alleAllergener } from '../src/utils/kosthold';
 import { formaterPris } from '../src/utils/pris';
@@ -22,6 +24,7 @@ import { hentStatus } from '../src/utils/status';
 
 /** Min Side: profil, bestillinger, kosthold og favorittkantine. */
 export default function MinSideSkjerm() {
+  useInnstillinger(); // tegnes på nytt når språk eller tema byttes
   const { student, lastet } = useBruker();
 
   if (!lastet) {
@@ -48,12 +51,12 @@ function LoggInnVisning() {
       <View style={styles.loggInnIkon}>
         <Ionicons name="person" size={40} color={farger.primaer} />
       </View>
-      <Text style={[skrift.tittel, styles.midtstilt]}>Logg inn</Text>
+      <Text style={[skrift.tittel, styles.midtstilt]}>{t('Logg inn')}</Text>
       <Text style={[skrift.brodtekst, styles.midtstilt, { color: farger.tekstDempet }]}>
-        Logg inn med Feide-brukeren din fra OsloMet for å bestille mat og lagre allergier og
-        favorittkantine.
+        {t('Logg inn med Feide-brukeren din fra OsloMet for å bestille mat og lagre allergier og favorittkantine.')}
       </Text>
       <FeideLoggInnKnapp />
+      <InnstillingerLenke />
     </View>
   );
 }
@@ -81,16 +84,18 @@ function InnloggetVisning() {
           {student.epost ? <Text style={skrift.liten}>{student.epost}</Text> : null}
           {student.institusjon ? <Text style={skrift.liten}>{student.institusjon}</Text> : null}
           <Merkelapp
-            tekst={student.innloggetMed === 'feide' ? 'Innlogget med Feide' : 'Demobruker'}
+            tekst={student.innloggetMed === 'feide' ? t('Innlogget med Feide') : t('Demobruker')}
             variant="mork"
           />
         </View>
       </View>
 
+      <InnstillingerLenke />
+
       {/* Bestillinger */}
-      <Seksjon tittel="Mine bestillinger">
+      <Seksjon tittel={t('Mine bestillinger')}>
         {sisteBestillinger.length === 0 ? (
-          <Text style={skrift.liten}>Du har ingen bestillinger ennå.</Text>
+          <Text style={skrift.liten}>{t('Du har ingen bestillinger ennå.')}</Text>
         ) : (
           sisteBestillinger.map((b) => {
             const status = hentStatus(b, naa);
@@ -102,7 +107,7 @@ function InnloggetVisning() {
                 style={({ pressed }) => [styles.rad, pressed && { opacity: 0.7 }]}
               >
                 <View style={styles.radTekst}>
-                  <Text style={styles.radTittel}>{hentKantine(b.kantineId)?.navn ?? 'Kantine'}</Text>
+                  <Text style={styles.radTittel}>{hentKantine(b.kantineId)?.navn ?? t('Kantine')}</Text>
                   <Text style={skrift.liten}>
                     {klokkeslett(new Date(b.opprettet))} · {formaterPris(b.totalpris)}
                   </Text>
@@ -115,7 +120,7 @@ function InnloggetVisning() {
         )}
         {bestillinger.length > 0 ? (
           <Pressable onPress={() => router.push('/bestillinger')} accessibilityRole="link">
-            <Text style={styles.lenke}>Se alle bestillinger ({bestillinger.length})</Text>
+            <Text style={styles.lenke}>{t('Se alle bestillinger')} ({bestillinger.length})</Text>
           </Pressable>
         ) : null}
       </Seksjon>
@@ -125,12 +130,12 @@ function InnloggetVisning() {
         <Ionicons name="leaf" size={28} color={farger.suksess} />
         <View style={styles.flex}>
           <Text style={styles.innsatsTall}>
-            {statistikk.reddedeVarer} {statistikk.reddedeVarer === 1 ? 'vare' : 'varer'} reddet
+            {t(statistikk.reddedeVarer === 1 ? '{antall} vare reddet' : '{antall} varer reddet', { antall: statistikk.reddedeVarer })}
           </Text>
           <Text style={skrift.liten}>
             {statistikk.reddedeVarer > 0
-              ? `Du har kjøpt mat som ellers kunne blitt kastet, og spart ${formaterPris(statistikk.spartTotalt)} totalt.`
-              : 'Kjøp mat under «Redd maten» for å redusere matsvinn – og spare penger.'}
+              ? t('Du har kjøpt mat som ellers kunne blitt kastet, og spart {belop} totalt.', { belop: formaterPris(statistikk.spartTotalt) })
+              : t('Kjøp mat under «Redd maten» for å redusere matsvinn – og spare penger.')}
           </Text>
         </View>
       </View>
@@ -142,25 +147,25 @@ function InnloggetVisning() {
 
       {/* Kosthold */}
       <Seksjon
-        tittel="Allergier og kosthold"
-        undertekst="Varer som ikke passer for deg blir markert i menyen."
+        tittel={t('Allergier og kosthold')}
+        undertekst={t('Varer som ikke passer for deg blir markert i menyen.')}
       >
         <View style={styles.bryterRad}>
-          <Text style={skrift.brodtekst}>Vegetar</Text>
+          <Text style={skrift.brodtekst}>{t('Vegetar')}</Text>
           <Switch
             value={preferanser.vegetar}
             onValueChange={settVegetar}
             trackColor={{ true: farger.primaer, false: farger.kant }}
             thumbColor={farger.hvit}
-            accessibilityLabel="Vegetar"
+            accessibilityLabel={t('Vegetar')}
           />
         </View>
-        <Text style={styles.etikett}>Jeg vil unngå</Text>
+        <Text style={styles.etikett}>{t('Jeg vil unngå')}</Text>
         <View style={styles.brikker}>
           {alleAllergener.map((allergen) => (
             <Valgbrikke
               key={allergen}
-              tekst={allergen}
+              tekst={t(allergen)}
               valgt={preferanser.allergener.includes(allergen)}
               onPress={() => vekslAllergen(allergen)}
             />
@@ -169,10 +174,10 @@ function InnloggetVisning() {
       </Seksjon>
 
       {/* Favoritt */}
-      <Seksjon tittel="Favorittkantine" undertekst="Vises øverst på startsiden.">
+      <Seksjon tittel={t('Favorittkantine')} undertekst={t('Vises øverst på startsiden.')}>
         <View style={styles.brikker}>
           <Valgbrikke
-            tekst="Ingen"
+            tekst={t('Ingen')}
             valgt={preferanser.favorittKantineId === null}
             onPress={() => settFavoritt(null)}
           />
@@ -188,29 +193,40 @@ function InnloggetVisning() {
       </Seksjon>
 
       {/* Varsler */}
-      <Seksjon tittel="Varsler">
+      <Seksjon tittel={t('Varsler')}>
         <View style={styles.bryterRad}>
-          <Text style={[skrift.brodtekst, styles.flex]}>Si fra når favorittkantina har «Redd maten»-tilbud</Text>
+          <Text style={[skrift.brodtekst, styles.flex]}>{t('Si fra når favorittkantina har «Redd maten»-tilbud')}</Text>
           <Switch
             value={preferanser.varselReddMaten}
             onValueChange={settVarselReddMaten}
             trackColor={{ true: farger.primaer, false: farger.kant }}
             thumbColor={farger.hvit}
-            accessibilityLabel="Varsel om Redd maten"
+            accessibilityLabel={t('Varsel om Redd maten')}
           />
         </View>
-        <Text style={skrift.liten}>I prototypen vises varselet øverst på startsiden.</Text>
+        <Text style={skrift.liten}>{t('I prototypen vises varselet øverst på startsiden.')}</Text>
       </Seksjon>
 
-      {/* Tilgjengelighet */}
-      <Seksjon tittel="Tilgjengelighet">
-        <Text style={skrift.brodtekst}>
-          Appen følger innstillingene på telefonen din: tekststørrelse, mørk modus og skjermleser (VoiceOver/TalkBack).
-        </Text>
-      </Seksjon>
-
-      <Knapp tittel="Logg ut" variant="sekundaer" onPress={loggUt} />
+      <Knapp tittel={t('Logg ut')} variant="sekundaer" onPress={loggUt} />
     </ScrollView>
+  );
+}
+
+/** Lenke til Innstillinger (språk og lys/mørk modus). Globus-ikonet er lett å kjenne igjen uansett språk. */
+function InnstillingerLenke() {
+  return (
+    <Pressable
+      onPress={() => router.push('/innstillinger')}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.kort, styles.innstillinger, pressed && { opacity: 0.85 }]}
+    >
+      <Ionicons name="language-outline" size={22} color={farger.primaerMork} />
+      <View style={styles.flex}>
+        <Text style={skrift.fet}>{t('Innstillinger')}</Text>
+        <Text style={skrift.liten}>{t('Språk og lys/mørk modus')}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={farger.tekstDempet} />
+    </Pressable>
   );
 }
 
@@ -226,10 +242,15 @@ function Seksjon({ tittel, undertekst, children }: { tittel: string; undertekst?
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   flex: {
     flex: 1,
     gap: 2,
+  },
+  innstillinger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
   },
   innsats: {
     flexDirection: 'row',
@@ -338,4 +359,4 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: avstand.s,
   },
-});
+}));

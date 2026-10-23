@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { Bestilling, Bestillingssteg } from '../types';
 
 export interface Bestillingsstatus {
@@ -6,17 +7,17 @@ export interface Bestillingsstatus {
   ferdig: boolean;
 }
 
-/** Teksten studenten ser for hvert steg. */
+/** Teksten studenten ser for hvert steg (på valgt språk). */
 export function statustekst(steg: Bestillingssteg, erHenting: boolean): string {
   switch (steg) {
     case 'mottatt':
-      return 'Mottatt';
+      return t('Mottatt');
     case 'tilberedes':
-      return 'Tilberedes';
+      return t('Tilberedes');
     case 'klar':
-      return erHenting ? 'Klar for henting' : 'På vei til deg';
+      return erHenting ? t('Klar for henting') : t('På vei til deg');
     case 'utlevert':
-      return erHenting ? 'Hentet' : 'Levert';
+      return erHenting ? t('Hentet') : t('Levert');
   }
 }
 
@@ -35,6 +36,12 @@ export function hentStatus(bestilling: Bestilling, naa: Date = new Date()): Best
   };
 }
 
+/**
+ * Bestillinger studenten glemmer å bekrefte, arkiveres av seg selv
+ * så mange timer etter at maten ble klar.
+ */
+export const AUTO_ARKIVER_TIMER = 3;
+
 function simulertSteg(bestilling: Bestilling, naa: Date): Bestillingssteg {
   const minutterSiden = (naa.getTime() - new Date(bestilling.opprettet).getTime()) / 60_000;
   if (minutterSiden < 1) return 'mottatt';
@@ -42,11 +49,11 @@ function simulertSteg(bestilling: Bestilling, naa: Date): Bestillingssteg {
   if (bestilling.leveringsmaate.type === 'henting') {
     const minutterTilHenting = (new Date(bestilling.leveringsmaate.hentetid).getTime() - naa.getTime()) / 60_000;
     if (minutterTilHenting > 0) return 'tilberedes';
-    // Etter et par timer regner vi med at maten er hentet.
-    return minutterTilHenting < -120 ? 'utlevert' : 'klar';
+    // Klar til studenten sveiper i kassa – eller arkiveres etter noen timer.
+    return minutterTilHenting < -AUTO_ARKIVER_TIMER * 60 ? 'utlevert' : 'klar';
   }
 
   if (minutterSiden < 8) return 'tilberedes';
-  if (minutterSiden < 12) return 'klar';
-  return 'utlevert';
+  // "På vei til deg" til studenten sveiper – eller arkiveres etter noen timer.
+  return minutterSiden < 8 + AUTO_ARKIVER_TIMER * 60 ? 'klar' : 'utlevert';
 }

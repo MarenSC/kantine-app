@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { avstand, farger, fonter, radius } from '../theme';
+import { avstand, farger, fonter, lagStiler, radius } from '../theme';
+import { t } from '../i18n';
 import type { Enhet } from '../types';
 
 interface Props {
@@ -21,22 +22,22 @@ export function Antallvelger({ antall, maks, onEndre, enhet = 'stk' }: Props) {
       <Pressable
         onPress={() => onEndre(antall - 1)}
         accessibilityRole="button"
-        accessibilityLabel={antall === 1 ? 'Fjern fra handlekurv' : 'Reduser antall'}
+        accessibilityLabel={antall === 1 ? t('Fjern fra handlekurv') : t('Reduser antall')}
         style={styles.knapp}
         hitSlop={8}
       >
         <Ionicons name={antall === 1 ? 'trash-outline' : 'remove'} size={18} color={farger.primaerMork} />
       </Pressable>
 
-      <Text style={styles.antall} accessibilityLabel={enhet === 'hg' ? `Vekt: ${antall * 100} gram` : `Antall: ${antall}`}>
-        {enhet === 'hg' ? `${antall} hg` : antall}
+      <Text style={styles.antall} accessibilityLabel={enhet === 'hg' ? t('Vekt: {gram} gram', { gram: antall * 100 }) : t('Antall: {antall}', { antall })}>
+        {enhet === 'hg' ? `${antall} ${t('hg')}` : antall}
       </Text>
 
       <Pressable
         onPress={() => onEndre(antall + 1)}
         disabled={!kanOke}
         accessibilityRole="button"
-        accessibilityLabel="Øk antall"
+        accessibilityLabel={t('Øk antall')}
         style={[styles.knapp, !kanOke && styles.deaktivert]}
         hitSlop={8}
       >
@@ -46,7 +47,7 @@ export function Antallvelger({ antall, maks, onEndre, enhet = 'stk' }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = lagStiler(() => ({
   rad: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -70,4 +71,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: farger.tekst,
   },
-});
+}));
