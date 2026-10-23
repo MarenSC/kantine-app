@@ -78,6 +78,19 @@ export interface Vare {
   varianter?: string[];
   /** Overskrift i valget, f.eks. "Velg smak" */
   variantTittel?: string;
+  /** Retter man kan sette sammen en tallerken av (varmdisken) */
+  komponentvalg?: Komponentvalg[];
+}
+
+export interface Komponentvalg {
+  navn: string;
+  vegetar?: boolean;
+}
+
+/** En del av en sammensatt tallerken, f.eks. 150 g pasta */
+export interface Komponent {
+  navn: string;
+  gram: number;
 }
 
 export type Enhet = 'stk' | 'hg';
@@ -87,6 +100,10 @@ export interface Handlekurvlinje {
   antall: number;
   /** Valgt variant, f.eks. "Earl Grey" */
   variant?: string;
+  /** Innholdet på en sammensatt tallerken (varmdisken) */
+  komponenter?: Komponent[];
+  /** Unik id for linjer som ikke kan slås sammen (f.eks. tallerkener) */
+  linjeId?: string;
 }
 
 export type Leveringsmaate =
@@ -109,6 +126,8 @@ export interface Bestillingslinje {
   enhet?: Enhet;
   /** Valgt variant, f.eks. "Earl Grey" */
   variant?: string;
+  /** Innholdet på en sammensatt tallerken */
+  komponenter?: Komponent[];
 }
 
 export interface Student {

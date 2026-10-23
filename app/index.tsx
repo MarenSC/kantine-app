@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   },
   motiv: {
     width: '100%',
-    aspectRatio: 390 / 220,
+    aspectRatio: 390 / 150,
   },
   motivInnhold: {
     gap: avstand.xs,

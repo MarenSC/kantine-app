@@ -62,7 +62,11 @@ function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, k
         {utsolgt ? <Text style={styles.lager}>Utsolgt</Text> : null}
         {faaIgjen ? <Text style={styles.lager}>Kun {vare.antallIgjen} igjen</Text> : null}
         <Pris prisinfo={prisinfo} enhet={vare.enhet} />
-        {vare.enhet === 'hg' && antallIKurv > 0 ? (
+        {vare.komponentvalg && antallIKurv > 0 ? (
+          <Text style={styles.vekt}>
+            {antallIKurv} {antallIKurv === 1 ? 'tallerken' : 'tallerkener'} i handlekurven
+          </Text>
+        ) : vare.enhet === 'hg' && antallIKurv > 0 ? (
           <Text style={styles.vekt}>Valgt: {formaterAntall(antallIKurv, 'hg')} – juster i handlekurven</Text>
         ) : null}
       </View>

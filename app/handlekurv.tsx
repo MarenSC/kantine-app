@@ -22,7 +22,7 @@ import { useBruker } from '../src/context/BrukerContext';
 import { hentKantine } from '../src/data/kantiner';
 import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
-import { formaterPris, perEnhet } from '../src/utils/pris';
+import { formaterPris, perEnhet, totalGram } from '../src/utils/pris';
 import { gaaHjem } from '../src/utils/navigasjon';
 
 type Valg = 'henting' | 'levering';
@@ -91,23 +91,29 @@ export default function HandlekurvSkjerm() {
 
         {/* ---------- Varer ---------- */}
         <View style={styles.kort}>
-          {kurvVarer.map(({ vare, variant, antall, prisinfo, linjesum }, indeks) => (
-            <View key={`${vare.id}-${variant ?? ''}`} style={[styles.linje, indeks > 0 && styles.linjeSkille]}>
+          {kurvVarer.map(({ nokkel, vare, variant, komponenter, antall, prisinfo, linjesum }, indeks) => (
+            <View key={nokkel} style={[styles.linje, indeks > 0 && styles.linjeSkille]}>
               <View style={styles.linjeTekst}>
                 <Text style={styles.vareNavn}>{vare.navn}</Text>
                 {variant ? <Text style={styles.variant}>{variant}</Text> : null}
+                {komponenter ? (
+                  <Text style={styles.variant}>
+                    {komponenter.map((k) => `${k.navn} ${k.gram} g`).join(' · ')}
+                  </Text>
+                ) : null}
                 <Text style={skrift.liten}>
-                  {formaterPris(prisinfo.pris)} {perEnhet(vare.enhet)}
+                  {formaterPris(prisinfo.pris)}{' '}
+                  {komponenter ? `per tallerken (${totalGram(komponenter)} g)` : perEnhet(vare.enhet)}
                   {prisinfo.grunn ? `  (før ${formaterPris(prisinfo.ordinaerPris)})` : ''}
                 </Text>
               </View>
               <View style={styles.linjeHoyre}>
                 <Text style={styles.linjesum}>{formaterPris(linjesum)}</Text>
                 <Antallvelger
-                  enhet={vare.enhet}
+                  enhet={komponenter ? 'stk' : vare.enhet}
                   antall={antall}
                   maks={vare.antallIgjen}
-                  onEndre={(nytt) => settAntall(vare.id, nytt, variant)}
+                  onEndre={(nytt) => settAntall(nokkel, nytt)}
                 />
               </View>
             </View>

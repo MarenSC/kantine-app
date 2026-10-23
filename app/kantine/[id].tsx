@@ -13,6 +13,7 @@ import { Valgbrikke } from '../../src/components/Valgbrikke';
 import { VareBilde } from '../../src/components/VareBilde';
 import { VareKort } from '../../src/components/VareKort';
 import { VariantVelger } from '../../src/components/VariantVelger';
+import { VarmdiskVelger } from '../../src/components/VarmdiskVelger';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { useBruker } from '../../src/context/BrukerContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
@@ -62,7 +63,7 @@ export default function KantineSkjerm() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const kantine = hentKantine(id);
   const insets = useSafeAreaInsets();
-  const { kurvKantineId, antallIKurv, totalpris, antallAvVare, leggTil } = useBestilling();
+  const { kurvKantineId, antallIKurv, totalpris, antallAvVare, leggTil, leggTilTallerken } = useBestilling();
   const { preferanser, settFavoritt } = useBruker();
   const [filter, setFilter] = useState<Filter>('alle');
   const [sok, setSok] = useState('');
@@ -122,6 +123,8 @@ export default function KantineSkjerm() {
 
   // Varen som venter på at studenten velger variant (f.eks. smak på te)
   const [variantFor, setVariantFor] = useState<Vare | null>(null);
+  // Varmdisken som er åpen for å sette sammen en tallerken
+  const [tallerkenFor, setTallerkenFor] = useState<Vare | null>(null);
 
   /** Legger i kurven, men spør først hvis kurven har varer fra en annen kantine. */
   const leggTilSjekket = useCallback(
@@ -144,7 +147,9 @@ export default function KantineSkjerm() {
 
   const haandterLeggTil = useCallback(
     (vare: Vare) => {
-      if (vare.varianter && vare.varianter.length > 0) {
+      if (vare.komponentvalg && vare.komponentvalg.length > 0) {
+        setTallerkenFor(vare); // åpner varmdisk-velgeren
+      } else if (vare.varianter && vare.varianter.length > 0) {
         setVariantFor(vare); // åpner valget
       } else {
         leggTilSjekket(vare);
@@ -315,6 +320,27 @@ export default function KantineSkjerm() {
             tittel={sok ? `Ingen treff på «${sok}»` : 'Ingen varer her akkurat nå'}
           />
         }
+      />
+
+      <VarmdiskVelger
+        vare={tallerkenFor}
+        onLukk={() => setTallerkenFor(null)}
+        onLeggTil={(komponenter) => {
+          const vare = tallerkenFor;
+          setTallerkenFor(null);
+          if (!vare) return;
+          const annenKantine = kurvKantineId !== null && kurvKantineId !== vare.kantineId;
+          if (!annenKantine) {
+            leggTilTallerken(vare, komponenter);
+            return;
+          }
+          bekreft(
+            'Starte ny handlekurv?',
+            'Du har varer fra en annen kantine i handlekurven. Du kan bare bestille fra én kantine om gangen.',
+            'Tøm og legg til',
+            () => leggTilTallerken(vare, komponenter),
+          );
+        }}
       />
 
       <VariantVelger

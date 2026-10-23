@@ -79,3 +79,13 @@ export function perEnhet(enhet: Enhet = 'stk'): string {
 export function formaterAntall(antall: number, enhet: Enhet = 'stk'): string {
   return enhet === 'hg' ? `${antall * 100} g` : `${antall} ×`;
 }
+
+/** Totalvekt i gram for en sammensatt tallerken. */
+export function totalGram(komponenter: { gram: number }[]): number {
+  return komponenter.reduce((sum, k) => sum + k.gram, 0);
+}
+
+/** Pris for en vektvare: kr per hg × gram / 100, avrundet til hele kroner. */
+export function prisForVekt(prisPerHg: number, gram: number): number {
+  return Math.round((prisPerHg * gram) / 100);
+}

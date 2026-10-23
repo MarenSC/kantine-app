@@ -84,10 +84,11 @@ export default function BestillingSkjerm() {
       </View>
 
       <View style={styles.kort}>
-        {bestilling.linjer.map((linje) => (
-          <View key={linje.vareId} style={styles.linje}>
+        {bestilling.linjer.map((linje, i) => (
+          <View key={`${linje.vareId}-${linje.variant ?? ""}-${i}`} style={styles.linje}>
             <Text style={[skrift.brodtekst, styles.linjeNavn]}>
               {formaterAntall(linje.antall, linje.enhet)} {linje.navn}
+              {linje.komponenter ? `\n${linje.komponenter.map((k) => `${k.navn} ${k.gram} g`).join(' · ')}` : ''}
             </Text>
             <Text style={skrift.brodtekst}>{formaterPris(linje.antall * linje.stykkpris)}</Text>
           </View>
