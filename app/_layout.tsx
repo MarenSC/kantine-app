@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { ProfilKnapp } from '../src/components/ProfilKnapp';
+import { StatusVarsel } from '../src/components/StatusVarsel';
 import { BestillingProvider } from '../src/context/BestillingContext';
 import { BrukerProvider } from '../src/context/BrukerContext';
 import { erMorkModus, farger, fonter } from '../src/theme';
@@ -58,6 +59,8 @@ export default function RootLayout() {
           <Stack.Screen name="bestillinger/[id]" options={{ title: 'Bestilling' }} />
           <Stack.Screen name="min-side" options={{ title: 'Min side', headerRight: () => null }} />
         </Stack>
+        {/* Flytende status på aktiv bestilling, over alle skjermer */}
+        <StatusVarsel />
       </BestillingProvider>
     </BrukerProvider>
   );
