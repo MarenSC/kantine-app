@@ -59,8 +59,10 @@ export interface Vare {
   /** Ordinær pris i kroner */
   pris: number;
   tilbud?: Tilbud;
-  /** Siste salgsdag ("YYYY-MM-DD"). Brukes til å gi rabatt når datoen nærmer seg. */
+  /** Siste salgsdag ("YYYY-MM-DD"). Brukes til å gi rabatt når datoen nærmer seg. Settes av rotasjon.ts. */
   bestFoer?: string;
+  /** Kort holdbarhet: kan havne på «Redd maten» (se rotasjon.ts) */
+  ferskvare?: boolean;
   allergener: string[];
   vegetar?: boolean;
   antallIgjen: number;
@@ -85,6 +87,8 @@ export interface Vare {
 export interface Komponentvalg {
   navn: string;
   vegetar?: boolean;
+  /** Tilbehør (ris, poteter …) finnes hver dag. Hovedrettene rulleres. */
+  tilbehor?: boolean;
 }
 
 /** En del av en sammensatt tallerken, f.eks. 150 g pasta */

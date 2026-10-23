@@ -508,6 +508,7 @@ const tekster: Record<string, Oversettelse> = {
   'Pasta med pesto': { en: 'Pasta with pesto', es: 'Pasta al pesto', de: 'Pasta mit Pesto', fr: 'Pâtes au pesto' },
   'Kremet kyllinggryte': { en: 'Creamy chicken stew', es: 'Guiso cremoso de pollo', de: 'Cremiger Hähncheneintopf', fr: 'Ragoût de poulet crémeux' },
   'Ovnsbakt laks': { en: 'Oven-baked salmon', es: 'Salmón al horno', de: 'Ofenlachs', fr: 'Saumon au four' },
+  'Kjøttboller i tomatsaus': { en: 'Meatballs in tomato sauce', es: 'Albóndigas en salsa de tomate', de: 'Fleischbällchen in Tomatensoße', fr: 'Boulettes de viande sauce tomate' },
   'Ris': { en: 'Rice', es: 'Arroz', de: 'Reis', fr: 'Riz' },
   'Ovnsbakte poteter': { en: 'Roast potatoes', es: 'Patatas al horno', de: 'Ofenkartoffeln', fr: 'Pommes de terre au four' },
   'Grønnsaksmiks': { en: 'Mixed vegetables', es: 'Verduras variadas', de: 'Gemüsemix', fr: 'Mélange de légumes' },
@@ -616,7 +617,7 @@ const tekster: Record<string, Oversettelse> = {
 
 /** Navn som er like på alle språk (merkenavn o.l.). */
 const uendret = [
-  'Falafel', 'Coca-Cola', 'Solo Super', 'Monster Ultra Peachy Keen', 'Monster Mango Loco', 'Stratos', 'New Energy',
+  'Falafel', 'Chili sin carne', 'Coca-Cola', 'Solo Super', 'Monster Ultra Peachy Keen', 'Monster Mango Loco', 'Stratos', 'New Energy',
   'YT Protein', 'Earl Grey', 'Rooibos', 'Caffè latte', 'Smoothie',
 ];
 

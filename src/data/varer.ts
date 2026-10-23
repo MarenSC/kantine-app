@@ -1,10 +1,11 @@
 import type { Kategori, Vare } from '../types';
-import { datoOmDager } from '../utils/dato';
+import { rullerTilbud } from './rotasjon';
 
 /**
  * EKSEMPELDATA – menyer og priser for prototypen.
- * `bestFoer` regnes ut fra dagens dato, slik at det alltid finnes
- * varer med datorabatt når du tester appen.
+ * Tilbud og «Redd maten» står ikke her: de rulleres automatisk
+ * (se rotasjon.ts), så det er nye tilbud hver dag/uke.
+ * `ferskvare: true` betyr at varen kan havne på «Redd maten».
  */
 
 export const kategorinavn: Record<Kategori, string> = {
@@ -28,7 +29,8 @@ export const kategoriRekkefolge: Kategori[] = [
   'drikke',
 ];
 
-export const varer: Vare[] = [
+/** Den faste menyen, før dagens tilbud er lagt på. */
+const grunnmeny: Vare[] = [
   // ---------- Kantina P35 ----------
   {
     id: 'p35-varmdisk',
@@ -43,10 +45,13 @@ export const varer: Vare[] = [
       { navn: 'Kremet kyllinggryte' },
       { navn: 'Ovnsbakt laks' },
       { navn: 'Falafel', vegetar: true },
-      { navn: 'Ris', vegetar: true },
-      { navn: 'Ovnsbakte poteter', vegetar: true },
-      { navn: 'Grønnsaksmiks', vegetar: true },
-      { navn: 'Couscoussalat', vegetar: true },
+      { navn: 'Chili sin carne', vegetar: true },
+      { navn: 'Kjøttboller i tomatsaus' },
+      // Tilbehør er der hver dag. Hovedrettene over byttes på (4 om gangen).
+      { navn: 'Ris', vegetar: true, tilbehor: true },
+      { navn: 'Ovnsbakte poteter', vegetar: true, tilbehor: true },
+      { navn: 'Grønnsaksmiks', vegetar: true, tilbehor: true },
+      { navn: 'Couscoussalat', vegetar: true, tilbehor: true },
     ],
     // Varmdisken varierer, så den merkes med de vanligste allergenene.
     allergener: ['gluten', 'melk', 'egg', 'fisk', 'skalldyr'],
@@ -60,9 +65,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Kylling, salat og chilimajones',
     kategori: 'smorbrod',
     pris: 89,
-    tilbud: { tekst: 'Studenttilbud', pris: 69 },
     allergener: ['gluten', 'melk', 'egg'],
     antallIgjen: 14,
+    ferskvare: true,
     bilde: require('../../assets/images/mat/kyllingwrap.jpg'),
   },
   {
@@ -72,9 +77,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Kylling, romanosalat og krutonger',
     kategori: 'salat',
     pris: 85,
-    bestFoer: datoOmDager(3),
     allergener: ['gluten', 'melk', 'egg', 'fisk'],
     antallIgjen: 6,
+    ferskvare: true,
     bilde: require('../../assets/images/mat/caesarsalat.jpg'),
   },
   {
@@ -84,9 +89,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Med ruccola, eple og valnøtter',
     kategori: 'smorbrod',
     pris: 65,
-    bestFoer: datoOmDager(0),
     allergener: ['gluten', 'melk', 'nøtter'],
     antallIgjen: 4,
+    ferskvare: true,
     bilde: require('../../assets/images/mat/baguette.jpg'),
   },
   {
@@ -96,10 +101,10 @@ export const varer: Vare[] = [
     beskrivelse: 'Med vaniljeglasur',
     kategori: 'bakevarer',
     pris: 39,
-    bestFoer: datoOmDager(0),
     vegetar: true,
     allergener: ['gluten', 'melk', 'egg'],
     antallIgjen: 8,
+    ferskvare: true,
     bilde: require('../../assets/images/mat/kanelbolle.jpg'),
   },
   {
@@ -173,6 +178,7 @@ export const varer: Vare[] = [
     pris: 35,
     allergener: ['gluten', 'melk', 'egg'],
     antallIgjen: 12,
+    ferskvare: true,
     vegetar: true,
     bilde: require('../../assets/images/mat/gulrotmuffins.jpg'),
   },
@@ -271,6 +277,7 @@ export const varer: Vare[] = [
     vegetar: true,
     allergener: ['gluten', 'melk'],
     antallIgjen: 10,
+    ferskvare: true,
     bilde: require('../../assets/images/mat/avokadotoast.jpg'),
   },
   {
@@ -434,10 +441,10 @@ export const varer: Vare[] = [
     beskrivelse: 'Nybakt hver morgen',
     kategori: 'bakevarer',
     pris: 39,
-    bestFoer: datoOmDager(0),
     vegetar: true,
     allergener: ['gluten', 'melk', 'egg'],
     antallIgjen: 8,
+    ferskvare: true,
     bilde: require('../../assets/images/mat/kanelbolle.jpg'),
   },
   {
@@ -449,6 +456,7 @@ export const varer: Vare[] = [
     pris: 49,
     allergener: ['gluten', 'melk'],
     antallIgjen: 12,
+    ferskvare: true,
   },
 
   // ---------- Kafé P46 ----------
@@ -459,10 +467,10 @@ export const varer: Vare[] = [
     beskrivelse: 'Falafel, hummus, grønnsaker og tahinidressing',
     kategori: 'smorbrod',
     pris: 75,
-    bestFoer: datoOmDager(1),
     vegetar: true,
     allergener: ['gluten', 'sesam'],
     antallIgjen: 7,
+    ferskvare: true,
   },
   {
     id: 'p46-pasta',
@@ -471,9 +479,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Pesto, soltørkede tomater og ruccola',
     kategori: 'salat',
     pris: 79,
-    tilbud: { tekst: 'Ukens tilbud', pris: 65 },
     allergener: ['gluten', 'melk', 'nøtter'],
     antallIgjen: 9,
+    ferskvare: true,
   },
   {
     id: 'p46-smoothie',
@@ -482,10 +490,10 @@ export const varer: Vare[] = [
     beskrivelse: 'Mango og pasjonsfrukt',
     kategori: 'drikke',
     pris: 49,
-    bestFoer: datoOmDager(0),
     vegetar: true,
     allergener: [],
     antallIgjen: 5,
+    ferskvare: true,
   },
   {
     id: 'p46-sjokolade',
@@ -506,9 +514,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Kjøttdeig eller bønner, tortilla og tilbehør',
     kategori: 'varmmat',
     pris: 95,
-    tilbud: { tekst: 'Ukens middag', pris: 79 },
     allergener: ['gluten', 'melk'],
     antallIgjen: 20,
+    ferskvare: true,
   },
   {
     id: 'p52-sushi',
@@ -517,9 +525,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Laks og avokado',
     kategori: 'varmmat',
     pris: 99,
-    bestFoer: datoOmDager(0),
     allergener: ['fisk', 'soya', 'sesam'],
     antallIgjen: 3,
+    ferskvare: true,
   },
   {
     id: 'p52-iste',
@@ -542,6 +550,7 @@ export const varer: Vare[] = [
     pris: 79,
     allergener: ['gluten', 'selleri'],
     antallIgjen: 18,
+    ferskvare: true,
   },
   {
     id: 'kj-rundstykke',
@@ -550,9 +559,9 @@ export const varer: Vare[] = [
     beskrivelse: 'Grovt rundstykke',
     kategori: 'smorbrod',
     pris: 45,
-    bestFoer: datoOmDager(1),
     allergener: ['gluten', 'egg', 'fisk', 'melk'],
     antallIgjen: 6,
+    ferskvare: true,
   },
   {
     id: 'kj-eple',
@@ -577,6 +586,9 @@ export const varer: Vare[] = [
     stempelkort: true,
   },
 ];
+
+/** Menyen med dagens «Redd maten», ukens tilbud og dagens utvalg i varmdisken. */
+export const varer: Vare[] = rullerTilbud(grunnmeny);
 
 export function hentVare(id: string): Vare | undefined {
   return varer.find((v) => v.id === id);
