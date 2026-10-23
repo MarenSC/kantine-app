@@ -9,7 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 
-import type { Preferanser, Student } from '../types';
+import { DEMO_GAVEKORT, normaliserKode, STARTSALDO_DEMO } from '../data/gavekort';
+import type { Gavekort, Preferanser, Student } from '../types';
 
 /**
  * Holder styr på innlogget student og preferansene (allergier, kosthold,
@@ -18,6 +19,11 @@ import type { Preferanser, Student } from '../types';
  */
 
 const LAGRINGSNOKKEL = 'kantina:bruker:v1';
+
+const tomtGavekort: Gavekort = { saldo: 0, innloste: [] };
+
+/** Svar når studenten legger inn en gavekortkode. `feil` er norsk tekst (oversettes ved visning). */
+export type GavekortSvar = { ok: true; belop: number } | { ok: false; feil: string };
 
 const standardPreferanser: Preferanser = {
   allergener: [],
@@ -38,11 +44,13 @@ export const DEMO_STUDENT: Student = {
 interface Lagret {
   student: Student | null;
   preferanser: Preferanser;
+  gavekort: Gavekort;
 }
 
 interface BrukerContextVerdi {
   student: Student | null;
   preferanser: Preferanser;
+  gavekort: Gavekort;
   /** false til lagrede data er lest inn ved oppstart */
   lastet: boolean;
   loggInn: (student: Student) => void;
@@ -51,12 +59,16 @@ interface BrukerContextVerdi {
   vekslAllergen: (allergen: string) => void;
   settFavoritt: (kantineId: string | null) => void;
   settVarselReddMaten: (paa: boolean) => void;
+  /** Legger en gavekortkode til saldoen */
+  loesInnGavekort: (kode: string) => GavekortSvar;
+  /** Trekker et beløp fra gavekortet. Returnerer false hvis saldoen ikke holder. */
+  betalMedGavekort: (belop: number) => boolean;
 }
 
 const BrukerContext = createContext<BrukerContextVerdi | null>(null);
 
 export function BrukerProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Lagret>({ student: null, preferanser: standardPreferanser });
+  const [data, setData] = useState<Lagret>({ student: null, preferanser: standardPreferanser, gavekort: tomtGavekort });
   const [lastet, setLastet] = useState(false);
 
   // Les inn lagrede data én gang ved oppstart.
@@ -68,6 +80,7 @@ export function BrukerProvider({ children }: { children: ReactNode }) {
         setData({
           student: lagret.student ?? null,
           preferanser: { ...standardPreferanser, ...lagret.preferanser },
+          gavekort: lagret.gavekort ?? (lagret.student ? { saldo: STARTSALDO_DEMO, innloste: [] } : tomtGavekort),
         });
       })
       .catch((feil) => console.warn('Kunne ikke lese brukerdata', feil))
@@ -83,12 +96,13 @@ export function BrukerProvider({ children }: { children: ReactNode }) {
   }, [data, lastet]);
 
   const loggInn = useCallback((student: Student) => {
-    setData((d) => ({ ...d, student }));
+    // Demo: en ny innlogging starter med et gavekort, så saldoen kan vises med en gang
+    setData((d) => ({ ...d, student, gavekort: d.student ? d.gavekort : { saldo: STARTSALDO_DEMO, innloste: [] } }));
   }, []);
 
   const loggUt = useCallback(() => {
     // Preferansene slettes også, siden de hører til studenten.
-    setData({ student: null, preferanser: standardPreferanser });
+    setData({ student: null, preferanser: standardPreferanser, gavekort: tomtGavekort });
   }, []);
 
   const settVegetar = useCallback((vegetar: boolean) => {
@@ -113,10 +127,35 @@ export function BrukerProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, preferanser: { ...d.preferanser, varselReddMaten } }));
   }, []);
 
+  const loesInnGavekort = useCallback(
+    (kode: string): GavekortSvar => {
+      const ren = normaliserKode(kode);
+      const belop = DEMO_GAVEKORT[ren];
+      if (!belop) return { ok: false, feil: 'Fant ingen gavekort med denne koden.' };
+      if (data.gavekort.innloste.includes(ren)) return { ok: false, feil: 'Denne koden er allerede brukt.' };
+      setData((d) => ({
+        ...d,
+        gavekort: { saldo: d.gavekort.saldo + belop, innloste: [...d.gavekort.innloste, ren] },
+      }));
+      return { ok: true, belop };
+    },
+    [data.gavekort.innloste],
+  );
+
+  const betalMedGavekort = useCallback(
+    (belop: number) => {
+      if (data.gavekort.saldo < belop) return false;
+      setData((d) => ({ ...d, gavekort: { ...d.gavekort, saldo: d.gavekort.saldo - belop } }));
+      return true;
+    },
+    [data.gavekort.saldo],
+  );
+
   const verdi = useMemo<BrukerContextVerdi>(
     () => ({
       student: data.student,
       preferanser: data.preferanser,
+      gavekort: data.gavekort,
       lastet,
       loggInn,
       loggUt,
@@ -124,8 +163,10 @@ export function BrukerProvider({ children }: { children: ReactNode }) {
       vekslAllergen,
       settFavoritt,
       settVarselReddMaten,
+      loesInnGavekort,
+      betalMedGavekort,
     }),
-    [data, lastet, loggInn, loggUt, settVegetar, vekslAllergen, settFavoritt, settVarselReddMaten],
+    [data, lastet, loggInn, loggUt, settVegetar, vekslAllergen, settFavoritt, settVarselReddMaten, loesInnGavekort, betalMedGavekort],
   );
 
   return <BrukerContext.Provider value={verdi}>{children}</BrukerContext.Provider>;

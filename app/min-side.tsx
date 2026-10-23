@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from 're
 
 import { Bunnmeny } from '../src/components/Bunnmeny';
 import { FeideLoggInnKnapp } from '../src/components/FeideLoggInnKnapp';
+import { GavekortKort } from '../src/components/GavekortKort';
 import { Knapp } from '../src/components/Knapp';
 import { Merkelapp } from '../src/components/Merkelapp';
 import { initialer } from '../src/components/ProfilKnapp';
@@ -139,6 +140,11 @@ function InnloggetVisning() {
           </Text>
         </View>
       </View>
+
+      {/* Gavekort */}
+      <Seksjon tittel={t('Gavekort')}>
+        <GavekortKort />
+      </Seksjon>
 
       {/* Stempelkort */}
       <View style={styles.kort}>

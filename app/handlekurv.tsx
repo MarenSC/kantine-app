@@ -26,8 +26,14 @@ import { t } from '../src/i18n';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
 import { formaterPris, perEnhet, totalGram } from '../src/utils/pris';
 import { gaaHjem } from '../src/utils/navigasjon';
+import type { Betalingsmetode } from '../src/types';
 
 type Valg = 'henting' | 'levering';
+
+type IkonNavn = 'card-outline' | 'phone-portrait-outline' | 'gift-outline';
+
+/** Demo: kortet som "ligger lagret" på brukeren */
+const LAGRET_KORT = 'Visa •••• 4242';
 
 /** Hvor mange minutter frem i tid studenten kan velge å hente. */
 const HENTETIDER_MINUTTER = [10, 20, 30, 45, 60];
@@ -36,13 +42,15 @@ export default function HandlekurvSkjerm() {
   const insets = useSafeAreaInsets();
   useInnstillinger(); // tegnes på nytt når språk eller tema byttes
   const { kurvKantineId, kurvVarer, totalpris, spart, settAntall, sendBestilling } = useBestilling();
-  const { student } = useBruker();
+  const { student, gavekort, betalMedGavekort } = useBruker();
   const kantine = kurvKantineId ? hentKantine(kurvKantineId) : undefined;
 
   const [valg, setValg] = useState<Valg>('henting');
   const [hentOmMinutter, setHentOmMinutter] = useState(HENTETIDER_MINUTTER[0]);
   const [plassering, setPlassering] = useState('');
   const [kommentar, setKommentar] = useState('');
+  const [betaling, setBetaling] = useState<Betalingsmetode>('kort');
+  const [betaler, setBetaler] = useState(false);
 
   // Tidspunktene regnes ut når skjermen åpnes.
   const naa = useMemo(() => new Date(), []);
@@ -62,16 +70,34 @@ export default function HandlekurvSkjerm() {
   const aapen = erAapen(kantine.aapner, kantine.stenger);
   const manglerPlassering = valg === 'levering' && plassering.trim().length === 0;
 
-  function bekreft() {
-    const id = sendBestilling(
-      valg === 'henting'
-        ? { type: 'henting', hentetid: leggTilMinutter(new Date(), hentOmMinutter).toISOString() }
-        : { type: 'levering', plassering: plassering.trim() },
-      kommentar,
+  const nokPaaGavekort = gavekort.saldo >= totalpris;
+
+  /** Simulert betaling: venter litt (som om kort/Vipps godkjennes), og sender så bestillingen. */
+  function betalOgBestill() {
+    if (betaler) return;
+    if (betaling === 'gavekort' && !nokPaaGavekort) return;
+    setBetaler(true);
+    setTimeout(
+      () => {
+        if (betaling === 'gavekort' && !betalMedGavekort(totalpris)) {
+          setBetaler(false);
+          return;
+        }
+        const id = sendBestilling(
+          valg === 'henting'
+            ? { type: 'henting', hentetid: leggTilMinutter(new Date(), hentOmMinutter).toISOString() }
+            : { type: 'levering', plassering: plassering.trim() },
+          kommentar,
+          betaling,
+        );
+        if (id) {
+          router.replace({ pathname: '/bestillinger/[id]', params: { id } });
+        } else {
+          setBetaler(false);
+        }
+      },
+      betaling === 'vipps' ? 1600 : 900,
     );
-    if (id) {
-      router.replace({ pathname: '/bestillinger/[id]', params: { id } });
-    }
   }
 
   return (
@@ -184,6 +210,43 @@ export default function HandlekurvSkjerm() {
           />
         </View>
 
+        {/* ---------- Betaling ---------- */}
+        {student ? (
+          <>
+            <Text style={styles.seksjonTittel}>{t('Hvordan vil du betale?')}</Text>
+            <View style={[styles.kort, styles.betalingKort]} accessibilityRole="radiogroup">
+              <Betalingsvalg
+                ikon="card-outline"
+                tittel={t('Bankkort')}
+                undertekst={LAGRET_KORT}
+                valgt={betaling === 'kort'}
+                onPress={() => setBetaling('kort')}
+              />
+              <Betalingsvalg
+                ikon="phone-portrait-outline"
+                tittel="Vipps"
+                undertekst={t('Godkjenn i Vipps-appen')}
+                valgt={betaling === 'vipps'}
+                onPress={() => setBetaling('vipps')}
+                skille
+              />
+              <Betalingsvalg
+                ikon="gift-outline"
+                tittel={t('Gavekort')}
+                undertekst={
+                  nokPaaGavekort
+                    ? t('Saldo: {belop}', { belop: formaterPris(gavekort.saldo) })
+                    : t('Ikke nok på gavekortet (saldo {belop})', { belop: formaterPris(gavekort.saldo) })
+                }
+                valgt={betaling === 'gavekort'}
+                deaktivert={!nokPaaGavekort}
+                onPress={() => setBetaling('gavekort')}
+                skille
+              />
+            </View>
+          </>
+        ) : null}
+
         {/* ---------- Oppsummering ---------- */}
         <View style={styles.kort}>
           {spart > 0 && (
@@ -196,16 +259,22 @@ export default function HandlekurvSkjerm() {
             <Text style={skrift.overskrift}>{t('Totalt')}</Text>
             <Text style={skrift.overskrift}>{formaterPris(totalpris)}</Text>
           </View>
-          <Text style={skrift.liten}>{t('Du betaler når du henter eller får maten levert.')}</Text>
+          <Text style={skrift.liten}>{t('Du betaler nå og får kvitteringen i appen.')}</Text>
         </View>
       </ScrollView>
 
       <View style={[styles.bunn, { paddingBottom: Math.max(insets.bottom, avstand.l) }]}>
         {student ? (
           <Knapp
-            tittel={`${t('Bekreft bestilling')} · ${formaterPris(totalpris)}`}
-            onPress={bekreft}
-            deaktivert={manglerPlassering}
+            tittel={
+              betaler
+                ? betaling === 'vipps'
+                  ? t('Venter på Vipps …')
+                  : t('Betaler …')
+                : t('Betal {belop} og bestill', { belop: formaterPris(totalpris) })
+            }
+            onPress={betalOgBestill}
+            deaktivert={manglerPlassering || betaler || (betaling === 'gavekort' && !nokPaaGavekort)}
           />
         ) : (
           <Knapp tittel={t('Logg inn med Feide for å bestille')} onPress={() => router.push('/min-side')} />
@@ -240,7 +309,59 @@ function Leveringsvalg({ ikon, tittel, undertekst, valgt, deaktivert, onPress }:
   );
 }
 
+interface BetalingsvalgProps {
+  ikon: IkonNavn;
+  tittel: string;
+  undertekst: string;
+  valgt: boolean;
+  deaktivert?: boolean;
+  /** Strek over raden (alle unntatt den første) */
+  skille?: boolean;
+  onPress: () => void;
+}
+
+function Betalingsvalg({ ikon, tittel, undertekst, valgt, deaktivert, skille, onPress }: BetalingsvalgProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={deaktivert}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: valgt, disabled: deaktivert }}
+      style={[styles.betalingRad, skille && styles.betalingSkille, deaktivert && styles.valgDeaktivert]}
+    >
+      <Ionicons name={ikon} size={22} color={valgt ? farger.primaer : farger.tekstDempet} />
+      <View style={styles.betalingTekst}>
+        <Text style={styles.vareNavn}>{tittel}</Text>
+        <Text style={skrift.liten}>{undertekst}</Text>
+      </View>
+      <Ionicons
+        name={valgt ? 'radio-button-on' : 'radio-button-off'}
+        size={22}
+        color={valgt ? farger.primaer : farger.tekstDempet}
+      />
+    </Pressable>
+  );
+}
+
 const styles = lagStiler(() => ({
+  betalingKort: {
+    paddingVertical: avstand.xs,
+    gap: 0,
+  },
+  betalingRad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: avstand.m,
+    paddingVertical: avstand.m,
+  },
+  betalingSkille: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: farger.kant,
+  },
+  betalingTekst: {
+    flex: 1,
+    gap: 2,
+  },
   skjerm: {
     flex: 1,
   },

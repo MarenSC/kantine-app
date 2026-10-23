@@ -123,6 +123,14 @@ export default function BestillingSkjerm() {
           <Rad ikon="location-outline" tekst={t('Leveres til: {sted}', { sted: leveringsmaate.plassering })} />
         )}
         {bestilling.kommentar ? <Rad ikon="chatbubble-outline" tekst={bestilling.kommentar} /> : null}
+        {bestilling.betaling ? (
+          <Rad
+            ikon={bestilling.betaling === 'gavekort' ? 'gift-outline' : 'card-outline'}
+            tekst={t('Betalt med {metode}', {
+              metode: bestilling.betaling === 'vipps' ? 'Vipps' : bestilling.betaling === 'gavekort' ? t('gavekort') : t('bankkort'),
+            })}
+          />
+        ) : null}
       </View>
 
       <View style={styles.kort}>
@@ -148,7 +156,7 @@ export default function BestillingSkjerm() {
   );
 }
 
-type IkonNavn = 'restaurant-outline' | 'time-outline' | 'location-outline' | 'chatbubble-outline';
+type IkonNavn = 'restaurant-outline' | 'time-outline' | 'location-outline' | 'chatbubble-outline' | 'card-outline' | 'gift-outline';
 
 function Rad({ ikon, tekst }: { ikon: IkonNavn; tekst: string }) {
   return (

@@ -114,6 +114,16 @@ export type Leveringsmaate =
   | { type: 'henting'; /** ISO-tidspunkt */ hentetid: string }
   | { type: 'levering'; /** Hvor studenten sitter */ plassering: string };
 
+/** Hvordan studenten betalte (betales på forhånd i appen) */
+export type Betalingsmetode = 'kort' | 'vipps' | 'gavekort';
+
+export interface Gavekort {
+  /** Kroner igjen på gavekortet */
+  saldo: number;
+  /** Koder som allerede er brukt (hver kode kan bare brukes én gang) */
+  innloste: string[];
+}
+
 export interface Bestillingslinje {
   vareId: string;
   navn: string;
@@ -163,6 +173,8 @@ export interface Bestilling {
   opprettet: string;
   /** Kode studenten viser frem ved henting */
   hentekode: string;
+  /** Hvordan bestillingen ble betalt. Mangler på gamle bestillinger. */
+  betaling?: Betalingsmetode;
   /** Status satt av appen/kantina. Mangler = simulert status. 'utlevert' settes når studenten sveiper i kassa. */
   status?: Bestillingssteg;
   /** ISO-tidspunkt for når studenten bekreftet at maten var hentet/levert */

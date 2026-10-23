@@ -12,6 +12,7 @@ import {
 
 import { hentVare } from '../data/varer';
 import type {
+  Betalingsmetode,
   Bestilling,
   Handlekurvlinje,
   Komponent,
@@ -206,7 +207,7 @@ interface BestillingContextVerdi {
   leggTilTallerken: (vare: Vare, komponenter: Komponent[]) => void;
   tomKurv: () => void;
   /** Sender bestillingen og returnerer id-en til den nye bestillingen */
-  sendBestilling: (leveringsmaate: Leveringsmaate, kommentar?: string) => string | null;
+  sendBestilling: (leveringsmaate: Leveringsmaate, kommentar: string | undefined, betaling: Betalingsmetode) => string | null;
   hentBestilling: (id: string) => Bestilling | undefined;
   /** Legger varene fra en tidligere bestilling i kurven. Returnerer hvor mange varer som fortsatt fantes. */
   bestillIgjen: (bestilling: Bestilling) => number;
@@ -309,7 +310,7 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
   const tomKurv = useCallback(() => dispatch({ type: 'TOM_KURV' }), []);
 
   const sendBestilling = useCallback(
-    (leveringsmaate: Leveringsmaate, kommentar?: string) => {
+    (leveringsmaate: Leveringsmaate, kommentar: string | undefined, betaling: Betalingsmetode) => {
       if (!state.kurvKantineId || kurvVarer.length === 0) return null;
 
       const bestilling: Bestilling = {
@@ -336,6 +337,7 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
         kommentar: kommentar?.trim() || undefined,
         opprettet: new Date().toISOString(),
         hentekode: lagHentekode(),
+        betaling,
       };
 
       dispatch({ type: 'LEGG_INN_BESTILLING', bestilling });

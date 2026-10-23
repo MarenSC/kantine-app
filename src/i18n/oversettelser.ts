@@ -288,6 +288,55 @@ const tekster: Record<string, Oversettelse> = {
     fr: 'Connecte-toi avec Feide pour commander',
   },
 
+  // ---------- Betaling og gavekort ----------
+  'Hvordan vil du betale?': { en: 'How do you want to pay?', es: '¿Cómo quieres pagar?', de: 'Wie möchtest du bezahlen?', fr: 'Comment veux-tu payer ?' },
+  'Bankkort': { en: 'Bank card', es: 'Tarjeta', de: 'Bankkarte', fr: 'Carte bancaire' },
+  'bankkort': { en: 'bank card', es: 'tarjeta', de: 'Bankkarte', fr: 'carte bancaire' },
+  'Godkjenn i Vipps-appen': { en: 'Approve in the Vipps app', es: 'Aprueba en la app de Vipps', de: 'In der Vipps-App bestätigen', fr: 'Valide dans l’appli Vipps' },
+  'Gavekort': { en: 'Gift card', es: 'Tarjeta regalo', de: 'Geschenkkarte', fr: 'Carte cadeau' },
+  'gavekort': { en: 'gift card', es: 'tarjeta regalo', de: 'Geschenkkarte', fr: 'carte cadeau' },
+  'Saldo: {belop}': { en: 'Balance: {belop}', es: 'Saldo: {belop}', de: 'Guthaben: {belop}', fr: 'Solde : {belop}' },
+  'Ikke nok på gavekortet (saldo {belop})': {
+    en: 'Not enough on the gift card (balance {belop})',
+    es: 'Saldo insuficiente en la tarjeta regalo ({belop})',
+    de: 'Nicht genug Guthaben auf der Geschenkkarte ({belop})',
+    fr: 'Solde insuffisant sur la carte cadeau ({belop})',
+  },
+  'Du betaler nå og får kvitteringen i appen.': {
+    en: 'You pay now and get the receipt in the app.',
+    es: 'Pagas ahora y recibes el recibo en la app.',
+    de: 'Du bezahlst jetzt und bekommst den Beleg in der App.',
+    fr: 'Tu paies maintenant et tu reçois le reçu dans l’appli.',
+  },
+  'Betal {belop} og bestill': { en: 'Pay {belop} and order', es: 'Pagar {belop} y pedir', de: '{belop} bezahlen und bestellen', fr: 'Payer {belop} et commander' },
+  'Betaler …': { en: 'Paying …', es: 'Pagando …', de: 'Zahlung läuft …', fr: 'Paiement …' },
+  'Venter på Vipps …': { en: 'Waiting for Vipps …', es: 'Esperando a Vipps …', de: 'Warte auf Vipps …', fr: 'En attente de Vipps …' },
+  'Betalt med {metode}': { en: 'Paid with {metode}', es: 'Pagado con {metode}', de: 'Bezahlt mit {metode}', fr: 'Payé par {metode}' },
+  'Saldo på gavekort': { en: 'Gift card balance', es: 'Saldo de la tarjeta regalo', de: 'Guthaben auf der Geschenkkarte', fr: 'Solde de la carte cadeau' },
+  'Saldo på gavekort: {belop}': { en: 'Gift card balance: {belop}', es: 'Saldo de la tarjeta regalo: {belop}', de: 'Guthaben auf der Geschenkkarte: {belop}', fr: 'Solde de la carte cadeau : {belop}' },
+  'Fått et gavekort av venner eller familie? Legg inn koden, så kan du betale med det når du bestiller.': {
+    en: 'Got a gift card from friends or family? Enter the code and you can pay with it when you order.',
+    es: '¿Te han regalado una tarjeta? Introduce el código y podrás pagar con ella al pedir.',
+    de: 'Eine Geschenkkarte von Freunden oder Familie bekommen? Gib den Code ein, dann kannst du damit bezahlen.',
+    fr: 'Tu as reçu une carte cadeau ? Saisis le code pour payer avec lors de ta commande.',
+  },
+  'Gavekortkode': { en: 'Gift card code', es: 'Código de la tarjeta regalo', de: 'Geschenkkarten-Code', fr: 'Code de la carte cadeau' },
+  'Legg til': { en: 'Add', es: 'Añadir', de: 'Hinzufügen', fr: 'Ajouter' },
+  '{belop} er lagt til på gavekortet ditt.': {
+    en: '{belop} has been added to your gift card.',
+    es: 'Se han añadido {belop} a tu tarjeta regalo.',
+    de: '{belop} wurden deiner Geschenkkarte gutgeschrieben.',
+    fr: '{belop} ont été ajoutés à ta carte cadeau.',
+  },
+  'Fant ingen gavekort med denne koden.': {
+    en: 'No gift card found with this code.',
+    es: 'No hay ninguna tarjeta regalo con este código.',
+    de: 'Keine Geschenkkarte mit diesem Code gefunden.',
+    fr: 'Aucune carte cadeau ne correspond à ce code.',
+  },
+  'Denne koden er allerede brukt.': { en: 'This code has already been used.', es: 'Este código ya se ha usado.', de: 'Dieser Code wurde bereits verwendet.', fr: 'Ce code a déjà été utilisé.' },
+  'Demo: prøv koden {kode}': { en: 'Demo: try the code {kode}', es: 'Demo: prueba el código {kode}', de: 'Demo: probier den Code {kode}', fr: 'Démo : essaie le code {kode}' },
+
   // ---------- Bestillinger og kvittering ----------
   'Ingen aktive bestillinger': { en: 'No active orders', es: 'No hay pedidos activos', de: 'Keine aktiven Bestellungen', fr: 'Aucune commande en cours' },
   'Når du reserverer eller bestiller mat, ser du statusen her.': {
