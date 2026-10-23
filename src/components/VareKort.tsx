@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { avstand, farger, fonter, radius, skygge } from '../theme';
 import type { Vare } from '../types';
-import type { Prisinfo } from '../utils/pris';
+import { formaterAntall, type Prisinfo } from '../utils/pris';
 import { LeggTilKnapp } from './LeggTilKnapp';
 import { Merkelapp } from './Merkelapp';
 import { Pris } from './Pris';
@@ -61,7 +61,10 @@ function VareKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel, k
         {advarsel ? <Merkelapp tekst={advarsel} variant="dato" /> : null}
         {utsolgt ? <Text style={styles.lager}>Utsolgt</Text> : null}
         {faaIgjen ? <Text style={styles.lager}>Kun {vare.antallIgjen} igjen</Text> : null}
-        <Pris prisinfo={prisinfo} />
+        <Pris prisinfo={prisinfo} enhet={vare.enhet} />
+        {vare.enhet === 'hg' && antallIKurv > 0 ? (
+          <Text style={styles.vekt}>Valgt: {formaterAntall(antallIKurv, 'hg')} – juster i handlekurven</Text>
+        ) : null}
       </View>
 
       <LeggTilKnapp
@@ -111,6 +114,11 @@ const styles = StyleSheet.create({
     fontFamily: fonter.vanlig,
     fontSize: 13,
     color: farger.tekstDempet,
+  },
+  vekt: {
+    fontFamily: fonter.medium,
+    fontSize: 12,
+    color: farger.primaerMork,
   },
   lager: {
     fontFamily: fonter.fet,

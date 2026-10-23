@@ -1,4 +1,4 @@
-import type { Vare } from '../types';
+import type { Enhet, Vare } from '../types';
 import { dagerTil, iDag } from './dato';
 
 /**
@@ -68,4 +68,14 @@ export function erUtgaatt(vare: Vare, dag: Date = iDag()): boolean {
 /** Formaterer et beløp, f.eks. 49 -> "49 kr". */
 export function formaterPris(kroner: number): string {
   return `${kroner} kr`;
+}
+
+/** "per stk." eller "per hg" */
+export function perEnhet(enhet: Enhet = 'stk'): string {
+  return enhet === 'hg' ? 'per hg' : 'per stk.';
+}
+
+/** Antall med enhet: "2 ×" for stykkvarer, "400 g" for vektvarer. */
+export function formaterAntall(antall: number, enhet: Enhet = 'stk'): string {
+  return enhet === 'hg' ? `${antall * 100} g` : `${antall} ×`;
 }

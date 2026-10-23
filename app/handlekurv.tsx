@@ -22,7 +22,7 @@ import { useBruker } from '../src/context/BrukerContext';
 import { hentKantine } from '../src/data/kantiner';
 import { avstand, farger, fonter, radius, skrift, skygge } from '../src/theme';
 import { erAapen, klokkeslett, leggTilMinutter } from '../src/utils/dato';
-import { formaterPris } from '../src/utils/pris';
+import { formaterPris, perEnhet } from '../src/utils/pris';
 import { gaaHjem } from '../src/utils/navigasjon';
 
 type Valg = 'henting' | 'levering';
@@ -91,21 +91,23 @@ export default function HandlekurvSkjerm() {
 
         {/* ---------- Varer ---------- */}
         <View style={styles.kort}>
-          {kurvVarer.map(({ vare, antall, prisinfo, linjesum }, indeks) => (
-            <View key={vare.id} style={[styles.linje, indeks > 0 && styles.linjeSkille]}>
+          {kurvVarer.map(({ vare, variant, antall, prisinfo, linjesum }, indeks) => (
+            <View key={`${vare.id}-${variant ?? ''}`} style={[styles.linje, indeks > 0 && styles.linjeSkille]}>
               <View style={styles.linjeTekst}>
                 <Text style={styles.vareNavn}>{vare.navn}</Text>
+                {variant ? <Text style={styles.variant}>{variant}</Text> : null}
                 <Text style={skrift.liten}>
-                  {formaterPris(prisinfo.pris)} per stk.
+                  {formaterPris(prisinfo.pris)} {perEnhet(vare.enhet)}
                   {prisinfo.grunn ? `  (før ${formaterPris(prisinfo.ordinaerPris)})` : ''}
                 </Text>
               </View>
               <View style={styles.linjeHoyre}>
                 <Text style={styles.linjesum}>{formaterPris(linjesum)}</Text>
                 <Antallvelger
+                  enhet={vare.enhet}
                   antall={antall}
                   maks={vare.antallIgjen}
-                  onEndre={(nytt) => settAntall(vare.id, nytt)}
+                  onEndre={(nytt) => settAntall(vare.id, nytt, variant)}
                 />
               </View>
             </View>
@@ -270,6 +272,11 @@ const styles = StyleSheet.create({
   linjeTekst: {
     flex: 1,
     gap: avstand.xs,
+  },
+  variant: {
+    fontFamily: fonter.medium,
+    fontSize: 13,
+    color: farger.primaerMork,
   },
   vareNavn: {
     fontSize: 15,

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bunnmeny } from '../src/components/Bunnmeny';
@@ -90,32 +90,53 @@ export default function StartSkjerm() {
           </Pressable>
         )}
 
+        {/* Hovedmotiv */}
+        <View style={styles.motivKort}>
+          <Image
+            source={require('../assets/images/forside-motiv.png')}
+            style={styles.motiv}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
+            accessible={false}
+          />
+          <View style={styles.motivInnhold}>
+            <Text style={skrift.tittel}>Lunsj uten kø</Text>
+            <Text style={skrift.liten}>
+              Varmdisk, kaffe og alt du trenger. Bestill i appen og hent når det passer deg.
+            </Text>
+            <Knapp
+              tittel={favoritt ? `Se menyen i ${favoritt.navn}` : 'Se menyen'}
+              onPress={() =>
+                router.push({ pathname: '/kantine/[id]', params: { id: favoritt?.id ?? 'p35-kantine' } })
+              }
+              style={styles.motivKnapp}
+            />
+          </View>
+        </View>
+
         {reddMaten && (
-          <View style={styles.reddKort}>
-            <VareBilde bilde={reddMaten.vare.bilde} style={styles.reddBilde}>
-              <View style={styles.reddMerke}>
-                <Merkelapp
-                  tekst={`Redd maten · −${Math.round((1 - reddMaten.prisinfo.pris / reddMaten.prisinfo.ordinaerPris) * 100)} %`}
-                  variant="mork"
-                />
-              </View>
-            </VareBilde>
-            <View style={styles.reddInnhold}>
+          <View style={styles.seksjon}>
+            <Text style={skrift.etikett}>Redd maten i dag</Text>
+            <Pressable
+              onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: reddMaten.vare.kantineId } })}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.kantine, pressed && { opacity: 0.85 }]}
+            >
+              <VareBilde bilde={reddMaten.vare.bilde} style={styles.kantineBilde} />
               <View style={styles.flex}>
-                <Text style={skrift.overskrift}>{reddMaten.vare.navn}</Text>
+                <Text style={skrift.fet}>{reddMaten.vare.navn}</Text>
                 <Text style={skrift.liten}>
                   {hentKantine(reddMaten.vare.kantineId)?.navn} ·{' '}
                   {reddMaten.prisinfo.etikett?.includes('i dag') ? 'siste salgsdag i dag' : 'siste salgsdag i morgen'}
                 </Text>
-                <View style={{ marginTop: avstand.xs }}>
-                  <Pris prisinfo={reddMaten.prisinfo} />
-                </View>
+                <Pris prisinfo={reddMaten.prisinfo} />
               </View>
-              <Knapp
-                tittel="Se tilbudet"
-                onPress={() => router.push({ pathname: '/kantine/[id]', params: { id: reddMaten.vare.kantineId } })}
+              <Merkelapp
+                tekst={`−${Math.round((1 - reddMaten.prisinfo.pris / reddMaten.prisinfo.ordinaerPris) * 100)} %`}
+                variant="tilbud"
               />
-            </View>
+              <Ionicons name="chevron-forward" size={18} color={farger.tekstDempet} />
+            </Pressable>
           </View>
         )}
 
@@ -257,26 +278,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: farger.primaerMork,
   },
-  reddKort: {
+  motivKort: {
     backgroundColor: farger.kort,
     borderRadius: radius.xl,
     overflow: 'hidden',
     ...skygge,
   },
-  reddBilde: {
-    height: 170,
-    borderRadius: 0,
+  motiv: {
+    width: '100%',
+    aspectRatio: 390 / 220,
   },
-  reddMerke: {
-    position: 'absolute',
-    left: 14,
-    top: 14,
+  motivInnhold: {
+    gap: avstand.xs,
+    padding: avstand.l + 2,
   },
-  reddInnhold: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: avstand.m,
-    padding: avstand.l,
+  motivKnapp: {
+    marginTop: avstand.m,
   },
   flex: {
     flex: 1,

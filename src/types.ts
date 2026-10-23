@@ -11,6 +11,7 @@ export type Kategori =
   | 'salat'
   | 'bakevarer'
   | 'snacks'
+  | 'frukt'
   | 'drikke';
 
 export interface Campus {
@@ -69,11 +70,23 @@ export interface Vare {
   dager?: number[];
   /** Gir stempel på stempelkortet (kaffe) */
   stempelkort?: boolean;
+  /** 'hg' = prisen gjelder per hekto (100 g), f.eks. varmdisken. Standard er 'stk'. */
+  enhet?: Enhet;
+  /** Hvor mye som legges i kurven første gang (f.eks. 4 hg) */
+  startAntall?: number;
+  /** Valg kunden må ta, f.eks. smak på te: ['Earl Grey', 'Grønn te', …] */
+  varianter?: string[];
+  /** Overskrift i valget, f.eks. "Velg smak" */
+  variantTittel?: string;
 }
+
+export type Enhet = 'stk' | 'hg';
 
 export interface Handlekurvlinje {
   vareId: string;
   antall: number;
+  /** Valgt variant, f.eks. "Earl Grey" */
+  variant?: string;
 }
 
 export type Leveringsmaate =
@@ -92,6 +105,10 @@ export interface Bestillingslinje {
   reddet: boolean;
   /** True hvis varen gir stempel på stempelkortet */
   stempel: boolean;
+  /** 'hg' når antall er hekto (vektbasert) */
+  enhet?: Enhet;
+  /** Valgt variant, f.eks. "Earl Grey" */
+  variant?: string;
 }
 
 export interface Student {

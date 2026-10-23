@@ -41,8 +41,8 @@ interface State {
 }
 
 type Action =
-  | { type: 'LEGG_TIL'; vare: Vare }
-  | { type: 'SETT_ANTALL'; vareId: string; antall: number }
+  | { type: 'LEGG_TIL'; vare: Vare; variant?: string }
+  | { type: 'SETT_ANTALL'; vareId: string; variant?: string; antall: number }
   | { type: 'TOM_KURV' }
   | { type: 'ERSTATT_KURV'; kantineId: string; linjer: Handlekurvlinje[] }
   | { type: 'LEGG_INN_BESTILLING'; bestilling: Bestilling }
@@ -58,17 +58,19 @@ const startState: State = {
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'LEGG_TIL': {
-      const { vare } = action;
+      const { vare, variant } = action;
       // Ny kantine? Da starter vi en ny kurv.
       const kurv = state.kurvKantineId === vare.kantineId ? state.kurv : [];
-      const eksisterende = kurv.find((l) => l.vareId === vare.id);
-      const naavaerendeAntall = eksisterende?.antall ?? 0;
+      const erSamme = (l: Handlekurvlinje) => l.vareId === vare.id && l.variant === variant;
+      const eksisterende = kurv.find(erSamme);
+      // Lageret gjelder varen totalt, uansett variant
+      const totaltIKurv = kurv.filter((l) => l.vareId === vare.id).reduce((sum, l) => sum + l.antall, 0);
 
-      if (naavaerendeAntall >= vare.antallIgjen) return state; // ikke flere på lager
+      if (totaltIKurv >= vare.antallIgjen) return state; // ikke flere på lager
 
       const nyKurv = eksisterende
-        ? kurv.map((l) => (l.vareId === vare.id ? { ...l, antall: l.antall + 1 } : l))
-        : [...kurv, { vareId: vare.id, antall: 1 }];
+        ? kurv.map((l) => (erSamme(l) ? { ...l, antall: l.antall + 1 } : l))
+        : [...kurv, { vareId: vare.id, variant, antall: Math.min(vare.startAntall ?? 1, vare.antallIgjen - totaltIKurv) }];
 
       return { ...state, kurvKantineId: vare.kantineId, kurv: nyKurv };
     }
@@ -76,11 +78,16 @@ function reducer(state: State, action: Action): State {
     case 'SETT_ANTALL': {
       const vare = hentVare(action.vareId);
       const maks = vare?.antallIgjen ?? 0;
-      const antall = Math.max(0, Math.min(action.antall, maks));
+      const erSamme = (l: Handlekurvlinje) => l.vareId === action.vareId && l.variant === action.variant;
+      // Plass igjen på lager når de andre variantene av samme vare er regnet med
+      const andre = state.kurv
+        .filter((l) => l.vareId === action.vareId && !erSamme(l))
+        .reduce((sum, l) => sum + l.antall, 0);
+      const antall = Math.max(0, Math.min(action.antall, maks - andre));
       const kurv =
         antall === 0
-          ? state.kurv.filter((l) => l.vareId !== action.vareId)
-          : state.kurv.map((l) => (l.vareId === action.vareId ? { ...l, antall } : l));
+          ? state.kurv.filter((l) => !erSamme(l))
+          : state.kurv.map((l) => (erSamme(l) ? { ...l, antall } : l));
 
       return { ...state, kurv, kurvKantineId: kurv.length > 0 ? state.kurvKantineId : null };
     }
@@ -140,6 +147,7 @@ function oppgrader(b: Bestilling): Bestilling {
 
 export interface KurvVare {
   vare: Vare;
+  variant?: string;
   antall: number;
   prisinfo: Prisinfo;
   linjesum: number;
@@ -164,8 +172,8 @@ interface BestillingContextVerdi {
   bestillinger: Bestilling[];
   statistikk: Statistikk;
   antallAvVare: (vareId: string) => number;
-  leggTil: (vare: Vare) => void;
-  settAntall: (vareId: string, antall: number) => void;
+  leggTil: (vare: Vare, variant?: string) => void;
+  settAntall: (vareId: string, antall: number, variant?: string) => void;
   tomKurv: () => void;
   /** Sender bestillingen og returnerer id-en til den nye bestillingen */
   sendBestilling: (leveringsmaate: Leveringsmaate, kommentar?: string) => string | null;
@@ -207,7 +215,7 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
         const vare = hentVare(linje.vareId);
         if (!vare) return [];
         const prisinfo = beregnPris(vare);
-        return [{ vare, antall: linje.antall, prisinfo, linjesum: prisinfo.pris * linje.antall }];
+        return [{ vare, variant: linje.variant, antall: linje.antall, prisinfo, linjesum: prisinfo.pris * linje.antall }];
       }),
     [state.kurv],
   );
@@ -228,15 +236,19 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     };
   }, [state.bestillinger]);
 
+  /** Totalt antall av en vare i kurven, alle varianter regnet med */
   const antallAvVare = useCallback(
-    (vareId: string) => state.kurv.find((l) => l.vareId === vareId)?.antall ?? 0,
+    (vareId: string) => state.kurv.filter((l) => l.vareId === vareId).reduce((sum, l) => sum + l.antall, 0),
     [state.kurv],
   );
 
-  const leggTil = useCallback((vare: Vare) => dispatch({ type: 'LEGG_TIL', vare }), []);
+  const leggTil = useCallback(
+    (vare: Vare, variant?: string) => dispatch({ type: 'LEGG_TIL', vare, variant }),
+    [],
+  );
 
   const settAntall = useCallback(
-    (vareId: string, antall: number) => dispatch({ type: 'SETT_ANTALL', vareId, antall }),
+    (vareId: string, antall: number, variant?: string) => dispatch({ type: 'SETT_ANTALL', vareId, variant, antall }),
     [],
   );
 
@@ -251,12 +263,14 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
         kantineId: state.kurvKantineId,
         linjer: kurvVarer.map((k) => ({
           vareId: k.vare.id,
-          navn: k.vare.navn,
+          navn: k.variant ? `${k.vare.navn} – ${k.variant}` : k.vare.navn,
+          variant: k.variant,
           antall: k.antall,
           stykkpris: k.prisinfo.pris,
           ordinaerPris: k.prisinfo.ordinaerPris,
           reddet: k.prisinfo.grunn === 'dato',
           stempel: k.vare.stempelkort === true,
+          enhet: k.vare.enhet,
         })),
         totalpris,
         leveringsmaate,
@@ -280,7 +294,7 @@ export function BestillingProvider({ children }: { children: ReactNode }) {
     const linjer: Handlekurvlinje[] = bestilling.linjer.flatMap((l) => {
       const vare = hentVare(l.vareId);
       if (!vare || erUtgaatt(vare) || vare.antallIgjen === 0) return [];
-      return [{ vareId: vare.id, antall: Math.min(l.antall, vare.antallIgjen) }];
+      return [{ vareId: vare.id, variant: l.variant, antall: Math.min(l.antall, vare.antallIgjen) }];
     });
     if (linjer.length > 0) dispatch({ type: 'ERSTATT_KURV', kantineId: bestilling.kantineId, linjer });
     return linjer.length;

@@ -12,6 +12,7 @@ import { Travelhet } from '../../src/components/Travelhet';
 import { Valgbrikke } from '../../src/components/Valgbrikke';
 import { VareBilde } from '../../src/components/VareBilde';
 import { VareKort } from '../../src/components/VareKort';
+import { VariantVelger } from '../../src/components/VariantVelger';
 import { useBestilling } from '../../src/context/BestillingContext';
 import { useBruker } from '../../src/context/BrukerContext';
 import { hentBygg, hentKantine } from '../../src/data/kantiner';
@@ -29,17 +30,24 @@ interface VareMedPris {
   advarsel: string | null;
 }
 
-/** Menyen er delt i grupper. "Redd maten" samler varer med datorabatt. */
-type GruppeId = 'lunsj' | 'redd' | 'bakevarer' | 'snacks';
+/**
+ * Menyen er delt i grupper. "Varmdisken" er vektbasert (pris per hg),
+ * og "Redd maten" samler varer med datorabatt.
+ */
+type GruppeId = 'varmdisk' | 'lunsj' | 'redd' | 'bakevarer' | 'frukt' | 'drikke' | 'snacks';
 
 const grupper: { id: GruppeId; tittel: string; kategorier: Kategori[]; rutenett?: boolean }[] = [
+  { id: 'varmdisk', tittel: 'Varmdisken', kategorier: [] },
   { id: 'lunsj', tittel: 'Lunsj', kategorier: ['varmmat', 'smorbrod', 'salat'] },
   { id: 'redd', tittel: 'Redd maten', kategorier: [] },
   { id: 'bakevarer', tittel: 'Bakevarer', kategorier: ['bakevarer'] },
-  { id: 'snacks', tittel: 'Drikke og snacks', kategorier: ['drikke', 'snacks'], rutenett: true },
+  { id: 'frukt', tittel: 'Frukt og grønt', kategorier: ['frukt'], rutenett: true },
+  { id: 'drikke', tittel: 'Drikke', kategorier: ['drikke'], rutenett: true },
+  { id: 'snacks', tittel: 'Snacks', kategorier: ['snacks'], rutenett: true },
 ];
 
 function gruppeFor({ vare, prisinfo }: VareMedPris): GruppeId {
+  if (vare.enhet === 'hg') return 'varmdisk';
   if (prisinfo.grunn === 'dato') return 'redd';
   return grupper.find((g) => g.kategorier.includes(vare.kategori))?.id ?? 'lunsj';
 }
@@ -112,11 +120,15 @@ export default function KantineSkjerm() {
 
   const kurvErHer = kurvKantineId === id && antallIKurv > 0;
 
-  const haandterLeggTil = useCallback(
-    (vare: Vare) => {
+  // Varen som venter på at studenten velger variant (f.eks. smak på te)
+  const [variantFor, setVariantFor] = useState<Vare | null>(null);
+
+  /** Legger i kurven, men spør først hvis kurven har varer fra en annen kantine. */
+  const leggTilSjekket = useCallback(
+    (vare: Vare, variant?: string) => {
       const annenKantine = kurvKantineId !== null && kurvKantineId !== vare.kantineId;
       if (!annenKantine) {
-        leggTil(vare);
+        leggTil(vare, variant);
         return;
       }
       const navn = hentKantine(kurvKantineId)?.navn ?? 'en annen kantine';
@@ -124,10 +136,21 @@ export default function KantineSkjerm() {
         'Starte ny handlekurv?',
         `Du har varer fra ${navn} i handlekurven. Du kan bare bestille fra én kantine om gangen.`,
         'Tøm og legg til',
-        () => leggTil(vare),
+        () => leggTil(vare, variant),
       );
     },
     [kurvKantineId, leggTil],
+  );
+
+  const haandterLeggTil = useCallback(
+    (vare: Vare) => {
+      if (vare.varianter && vare.varianter.length > 0) {
+        setVariantFor(vare); // åpner valget
+      } else {
+        leggTilSjekket(vare);
+      }
+    },
+    [leggTilSjekket],
   );
 
   if (!kantine) {
@@ -292,6 +315,15 @@ export default function KantineSkjerm() {
             tittel={sok ? `Ingen treff på «${sok}»` : 'Ingen varer her akkurat nå'}
           />
         }
+      />
+
+      <VariantVelger
+        vare={variantFor}
+        onLukk={() => setVariantFor(null)}
+        onVelg={(variant) => {
+          if (variantFor) leggTilSjekket(variantFor, variant);
+          setVariantFor(null);
+        }}
       />
 
       {kurvErHer && (

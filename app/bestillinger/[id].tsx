@@ -11,7 +11,7 @@ import { hentBygg, hentKantine } from '../../src/data/kantiner';
 import { useNaa } from '../../src/hooks/useNaa';
 import { avstand, farger, fonter, radius, skrift, skygge } from '../../src/theme';
 import { klokkeslett } from '../../src/utils/dato';
-import { formaterPris } from '../../src/utils/pris';
+import { formaterAntall, formaterPris } from '../../src/utils/pris';
 import { hentStatus } from '../../src/utils/status';
 import { bekreft, visMelding } from '../../src/utils/dialog';
 import { gaaHjem } from '../../src/utils/navigasjon';
@@ -87,7 +87,7 @@ export default function BestillingSkjerm() {
         {bestilling.linjer.map((linje) => (
           <View key={linje.vareId} style={styles.linje}>
             <Text style={[skrift.brodtekst, styles.linjeNavn]}>
-              {linje.antall} × {linje.navn}
+              {formaterAntall(linje.antall, linje.enhet)} {linje.navn}
             </Text>
             <Text style={skrift.brodtekst}>{formaterPris(linje.antall * linje.stykkpris)}</Text>
           </View>

@@ -23,7 +23,7 @@ function ProduktKortKomponent({ vare, prisinfo, antallIKurv, onLeggTil, advarsel
       </Text>
       {advarsel ? <Merkelapp tekst={advarsel} variant="dato" /> : null}
       <View style={styles.bunn}>
-        <Pris prisinfo={prisinfo} />
+        <Pris prisinfo={prisinfo} enhet={vare.enhet} />
         <LeggTilKnapp
           navn={vare.navn}
           antallIKurv={antallIKurv}
