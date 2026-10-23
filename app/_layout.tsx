@@ -7,12 +7,13 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { ProfilKnapp } from '../src/components/ProfilKnapp';
 import { StatusVarsel } from '../src/components/StatusVarsel';
 import { BestillingProvider } from '../src/context/BestillingContext';
 import { BrukerProvider } from '../src/context/BrukerContext';
-import { erMorkModus, farger, fonter } from '../src/theme';
+import { MAKS_BREDDE, erMorkModus, farger, fonter } from '../src/theme';
 
 // Vis splash-skjermen til skriftene er lastet, så teksten ikke "hopper".
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -40,28 +41,48 @@ export default function RootLayout() {
     <BrukerProvider>
       <BestillingProvider>
         <StatusBar style={erMorkModus ? 'light' : 'dark'} />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: farger.bakgrunn },
-            headerTintColor: farger.tekst,
-            headerTitleStyle: { color: farger.tekst, fontFamily: fonter.tittel, fontSize: 18 },
-            headerShadowVisible: false,
-            headerBackTitle: 'Tilbake',
-            contentStyle: { backgroundColor: farger.bakgrunn },
-            // Profilikonet øverst til høyre på alle skjermer
-            headerRight: () => <ProfilKnapp />,
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false, title: 'Hjem' }} />
-          <Stack.Screen name="kantine/[id]" options={{ headerShown: false, title: 'Meny' }} />
-          <Stack.Screen name="handlekurv" options={{ title: 'Handlekurv' }} />
-          <Stack.Screen name="bestillinger/index" options={{ title: 'Mine bestillinger' }} />
-          <Stack.Screen name="bestillinger/[id]" options={{ title: 'Bestilling' }} />
-          <Stack.Screen name="min-side" options={{ title: 'Min side', headerRight: () => null }} />
-        </Stack>
-        {/* Flytende status på aktiv bestilling, over alle skjermer */}
-        <StatusVarsel />
+        {/* På brede skjermer vises appen i en sentrert kolonne */}
+        <View style={styles.ramme}>
+          <View style={styles.app}>
+            <Stack
+              screenOptions={{
+                headerStyle: { backgroundColor: farger.bakgrunn },
+                headerTintColor: farger.tekst,
+                headerTitleStyle: { color: farger.tekst, fontFamily: fonter.tittel, fontSize: 18 },
+                headerShadowVisible: false,
+                headerBackTitle: 'Tilbake',
+                contentStyle: { backgroundColor: farger.bakgrunn },
+                // Profilikonet øverst til høyre på alle skjermer
+                headerRight: () => <ProfilKnapp />,
+              }}
+            >
+              <Stack.Screen name="index" options={{ headerShown: false, title: 'Hjem' }} />
+              <Stack.Screen name="kantine/[id]" options={{ headerShown: false, title: 'Meny' }} />
+              <Stack.Screen name="handlekurv" options={{ title: 'Handlekurv' }} />
+              <Stack.Screen name="bestillinger/index" options={{ title: 'Mine bestillinger' }} />
+              <Stack.Screen name="bestillinger/[id]" options={{ title: 'Bestilling' }} />
+              <Stack.Screen name="min-side" options={{ title: 'Min side', headerRight: () => null }} />
+            </Stack>
+            {/* Flytende status på aktiv bestilling, over alle skjermer */}
+            <StatusVarsel />
+          </View>
+        </View>
       </BestillingProvider>
     </BrukerProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  ramme: {
+    flex: 1,
+    backgroundColor: farger.ramme,
+  },
+  app: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MAKS_BREDDE,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    backgroundColor: farger.bakgrunn,
+  },
+});

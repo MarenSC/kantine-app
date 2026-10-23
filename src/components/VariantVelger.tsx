@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { avstand, farger, fonter, radius, skrift } from '../theme';
+import { MAKS_BREDDE, avstand, farger, fonter, radius, skrift } from '../theme';
 import type { Vare } from '../types';
 import { Knapp } from './Knapp';
 import { VareBilde } from './VareBilde';
@@ -83,6 +83,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   ark: {
+    width: '100%',
+    maxWidth: MAKS_BREDDE,
+    alignSelf: 'center',
     gap: avstand.m,
     paddingTop: avstand.s,
     paddingHorizontal: avstand.l + 4,

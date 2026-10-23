@@ -35,6 +35,8 @@ const lys = {
   suksess: '#3D5A35',
   suksessLys: '#DDE6D5',
   deaktivert: '#CFC5B8',
+  /** Flaten rundt appen på brede skjermer (nettbrett, PC) */
+  ramme: '#EDE3D6',
 };
 
 type Palett = Record<keyof typeof lys, string>;
@@ -59,6 +61,7 @@ const mork: Palett = {
   suksess: '#B5D1A8',
   suksessLys: '#263322',
   deaktivert: '#5A4E45',
+  ramme: '#110E0C',
 };
 
 /**
@@ -76,6 +79,9 @@ export const fonter = {
   medium: 'DMSans_500Medium',
   fet: 'DMSans_700Bold',
 } as const;
+
+/** Appen blir aldri bredere enn dette, så den ser ut som en app også på store skjermer. */
+export const MAKS_BREDDE = 520;
 
 export const avstand = {
   xs: 4,
